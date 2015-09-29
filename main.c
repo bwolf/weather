@@ -126,7 +126,8 @@ static void subsystems_power_up(void)
 
 
 // TODO this belongs to the SHT11 module
-static float convert_humi(int16_t raw_temp, int16_t raw_humi)
+// TODO ensure that conversion doesn't require `raw_temp'
+static float convert_humi(int16_t raw_temp __attribute__((unused)), int16_t raw_humi)
 {
     const float c1 = -2.0468f;
     const float c2 = 0.0367f;
@@ -214,48 +215,15 @@ static void sht11_read(void)
 
 
 
-// TODO move to config.h !!!!! or not ???????
-#define BMP085_OSS_VALUE BMP085_OVERSAMPLING_STANDARD
-
-static bmp085_t bmp085;
-
-// TODO move this read function into the bmp085 module without uart_*, leave the rest here
-static void bmp085_read(void)
-{
-    // uart_putsln_P("dC  P     PNN");
-
-    // Read uncompensated temperature value
-    uint16_t ut = bmp085_read_ut();
-
-    // Read uncompensated pressure value
-    uint32_t up = bmp085_read_up(BMP085_OSS_VALUE);
-
-    // Calculate temperature in deci degress C
-    int16_t decicelsius = bmp085_calculate_temperature(ut, &bmp085);
-    uart_puti16(decicelsius);
-    uart_putc(' ');
-
-    // Calculate true pressure
-    int32_t p = bmp085_calculate_true_pressure(up, &bmp085, BMP085_OSS_VALUE);
-    uart_puti32(p);
-    uart_putc(' ');
-
-    // Calculate pressure NN
-#ifndef WITHOUT_BMP085_CALC_PRESSURE_NN
-    const uint16_t altitude = 691;
-    uint32_t pNN = (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float)5.255));
-    uart_putu32(pNN);
-#endif // WITHOUT_BMP085_CALC_PRESSURE_NN
-
-    uart_crlf();
-}
+static bmp085_t bmp085; // TODO rename to _coefficients or include results into struct
+static bmp085_results_t bmp085_results;
 
 
 
 static void dowork(void)
 {
     dbgled_on(); // LED enable for 2s
-    bmp085_read();
+    bmp085_read(&bmp085_results, &bmp085);
     sht11_read();
     dbgled_off();
 }

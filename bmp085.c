@@ -250,6 +250,8 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, bmp085_t *b085, uint8_t oss)
     return p;
 }
 
+// TODO enable it in bmp085_t with #ifdef
+
 // Calculate altitude.
 // Note: This can be done anywhere given the current pressure.
 // Param: p - true pressure
@@ -261,5 +263,37 @@ float bmp085_calculate_altitude(int32_t p)
     return (float)44330 * (1 - pow(((float) p/p0), 0.190295));
 }
 #endif
+
+void bmp085_read(bmp085_results_t *res, const bmp085_t *bmp085)
+{
+    // uart_putsln_P("dC  P     PNN");
+
+    // Read uncompensated temperature value
+    uint16_t ut = bmp085_read_ut();
+
+    // Read uncompensated pressure value
+    uint32_t up = bmp085_read_up(BMP085_OSS_VALUE);
+
+    // Calculate temperature in deci degress C
+    int16_t decicelsius = bmp085_calculate_temperature(ut, bmp085);
+    res->decicelsius = decicelsius;
+    uart_puti16(decicelsius);
+    uart_putc(' ');
+
+    // Calculate true pressure
+    int32_t p = bmp085_calculate_true_pressure(up, bmp085, BMP085_OSS_VALUE);
+    res->pressure = p;
+    uart_puti32(p);
+    uart_putc(' ');
+
+    // Calculate pressure NN
+#ifndef WITHOUT_BMP085_CALC_PRESSURE_NN
+    const uint16_t altitude = 691;
+    uint32_t pNN = (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float)5.255));
+    uart_putu32(pNN);
+#endif // WITHOUT_BMP085_CALC_PRESSURE_NN
+
+    uart_crlf();
+}
 
 // EOF

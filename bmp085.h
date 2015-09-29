@@ -45,5 +45,13 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, bmp085_t *b085, uint8_t oss)
 float bmp085_calculate_altitude(int32_t p);
 #endif
 
+typedef struct bmp085_results {
+    int16_t decicelsius; // Temperature in deci degrees C
+    int32_t pressure;    // True pressure
+} bmp085_results_t;
+
+// All in one functionality
+void bmp085_read(bmp085_results_t *res, const bmp085_t *bmp085);
+
 // BMP085_H
 #endif
