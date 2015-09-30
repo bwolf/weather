@@ -9,7 +9,6 @@
 #include "twim.h"
 
 
-
 // SCL_CLOCK required for the clock calculation
 #ifndef SCL_CLOCK
 # error "Missing definition of SCL_CLOCK"
@@ -21,7 +20,6 @@
 #endif
 
 
-
 // Init two wire interface
 void twi_init(void)
 {
@@ -111,8 +109,6 @@ uint8_t twi_repeated_start(uint8_t address)
 // Param: address - the address and transfer direction of the TWI device.
 void twi_start_wait(uint8_t address)
 {
-    uint8_t status;
-
     while (1) {
         // Send START condition
         TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN);
@@ -124,7 +120,7 @@ void twi_start_wait(uint8_t address)
 
         // Check value of TWI status register. Mask prescaler bits. If
         // status different from START go to ERROR state.
-        status = TWSR & 0xF8;
+        uint8_t status = TWSR & 0xF8;
         if (status != TW_START && status != TW_REP_START)
             continue;
 
@@ -213,3 +209,5 @@ uint8_t twi_read_nack(void)
 
     return TWDR;
 }
+
+// EOF

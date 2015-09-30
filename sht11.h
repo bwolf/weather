@@ -27,7 +27,6 @@ typedef struct sht11 {
 uint8_t sht11_read(sht11_t *sht11);
 
 
-
 // Low level interface
 
 void sht11_init(void);

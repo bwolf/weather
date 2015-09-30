@@ -27,7 +27,6 @@
 #include "bmp085.h"
 
 
-
 // Define this in config.h to get error messages via uart
 // #define BMP085_WITH_UART_ERROR_MSGS
 
@@ -58,7 +57,6 @@
 #define _MD (b085->MD)
 
 
-
 // Init struct with sane values. Otherwise gcc complains about maybe
 // unitialized members.
 void bmp085_init(bmp085_t *b085)

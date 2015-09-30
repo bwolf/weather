@@ -25,5 +25,4 @@ uint8_t twi_write(uint8_t data);
 uint8_t twi_read_ack(void);
 uint8_t twi_read_nack(void);
 
-// TWIM_H
-#endif
+#endif // TWIM_H

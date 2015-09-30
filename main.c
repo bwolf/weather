@@ -15,7 +15,6 @@
 #include "sht11.h"
 
 
-
 #ifdef WITHOUT_POWERDOWN
 # warning "Compiling without power saving (powerdown)!"
 #endif
@@ -25,7 +24,6 @@
 #endif
 
 
-
 static inline void disable_ad_converter(void)
 {
 #ifdef __AVR_ATmega8__
@@ -45,7 +43,6 @@ static inline void disable_analog_comparator(void)
 }
 
 
-
 #ifndef WITHOUT_DBGLED
 static uint8_t led = 0;
 
@@ -84,7 +81,6 @@ static uint8_t led = 0;
 #endif
 
 
-
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
@@ -124,7 +120,6 @@ static void subsystems_power_up(void)
 }
 
 
-
 static bmp085_t bmp085; // TODO rename to _coefficients or include results into struct
 static bmp085_results_t bmp085_results;
 
@@ -159,7 +154,6 @@ static void dowork(void)
 }
 
 
-
 #define TIMER2_TICKS_UNTIL_WORK 10
 
 static volatile uint8_t dowork_flag;
