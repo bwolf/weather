@@ -28,22 +28,18 @@ typedef struct bmp085 {
     int16_t  MB;
     int16_t  MC;
     int16_t  MD;
-    // Interim result from temperature calculation which is reused in
-    // the true pressure calculation. Therefore the temperature must
-    // precede the pressure calculation.
-    int32_t B5;
 } bmp085_t;
 
 void bmp085_init(bmp085_t *b085);
 void bmp085_read_calibration_coefficients(bmp085_t *b085);
+
 uint16_t bmp085_read_ut(void);
 uint32_t bmp085_read_up(uint8_t oss);
-int16_t bmp085_calculate_temperature(uint16_t ut, bmp085_t *b085);
-int32_t bmp085_calculate_true_pressure(uint32_t up, bmp085_t *b085, uint8_t oss);
 
-#if 0
+int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_t * const b085);
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_t * const b085, uint8_t oss);
 float bmp085_calculate_altitude(int32_t p);
-#endif
+uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude);
 
 typedef struct bmp085_results {
     int16_t decicelsius; // Temperature in deci degrees C
@@ -51,7 +47,7 @@ typedef struct bmp085_results {
 } bmp085_results_t;
 
 // All in one functionality
-void bmp085_read(bmp085_results_t *res, const bmp085_t *bmp085);
+void bmp085_read(bmp085_results_t *res, const bmp085_t * const bmp085);
 
 // BMP085_H
 #endif

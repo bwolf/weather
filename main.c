@@ -98,7 +98,7 @@ static void subsystems_power_down(void)
     // TODO power down subsystems
 
     // SHT11
-    sht11_down();
+    //sht11_down(); Is already put down after sensor reading
 
     // BMP085
     // bmp085_down(); // yet missing
@@ -125,106 +125,36 @@ static void subsystems_power_up(void)
 
 
 
-// TODO this belongs to the SHT11 module
-// TODO ensure that conversion doesn't require `raw_temp'
-static float convert_humi(int16_t raw_temp __attribute__((unused)), int16_t raw_humi)
-{
-    const float c1 = -2.0468f;
-    const float c2 = 0.0367f;
-    const float c3 = -1.5955E-6;
-    const float RHlinear = c1 + c2 * raw_humi + c3 * (raw_humi * raw_humi);
-    return RHlinear;
-}
-
-// TODO this belongs to the SHT11 module
-static float convert_temp(int16_t raw_temperature)
-{
-    const float d1 = -39.6f;
-    const float d2 = 0.01f;
-    return (d1 + d2 * (float) raw_temperature);
-}
-
-static void sht11_read(void)
-{
-    uint8_t n, v;
-    int16_t temp = 0;
-
-    sht11_init();
-
-    if ((n = sht11_start_temp())) {
-        for (n = 0; n < 30; n++) {
-            _delay_ms(30);
-            if (sht11_ready()) {
-                temp = sht11_result_temp_get_raw();
-                uart_puti16(temp);
-                uart_space();
-                uart_puti16((int16_t) convert_temp(temp) * 10.f);
-                uart_space();
-                int16_t tempC = sht11_result_temp_convert_sht11(temp);
-                uart_puti16(tempC);
-                uart_space();
-                tempC = sht11_result_temp_convert_sht7x(temp);
-                uart_puti16(tempC);
-            }
-        }
-        // FIXME what the hell is that?
-        v = PINC & (1 << PINC1);
-        if (!v) {
-            uart_putsln_P("ERROR timeout waiting for temperature result");
-            return;
-        }
-    } else {
-        uart_puts_P("ERROR start reading temperature");
-        uart_putu8(n);
-        uart_crlf();
-        return;
-    }
-
-    uart_space();
-    _delay_ms(50);
-
-    if ((n = sht11_start_humid())) {
-        for (n = 0; n < 30; n++) {
-            _delay_ms(30);
-            if (sht11_ready()) {
-                uint16_t humid = sht11_result_humid_get_raw();
-                uart_puti16(humid);
-                uart_space();
-                uart_puti16((int16_t) convert_humi(temp, humid) * 10.f);
-                uart_space();
-                int16_t humidC = sht11_result_humid_convert_sht11(humid);
-                uart_puti16(humidC);
-                uart_space();
-                humidC = sht11_result_humid_convert_sht7x(temp, humid);
-                uart_puti16(humidC);
-            }
-        }
-        // FIXME what the hell is that?
-        v = PINC & (1 << PINC1);
-        if (!v) {
-            uart_putsln_P("ERROR timeout waiting for humidity result");
-        }
-    } else {
-        uart_puts_P("ERROR start reading humidity");
-        uart_putu8(n);
-        uart_crlf();
-    }
-
-    uart_crlf();
-}
-
-
-
 static bmp085_t bmp085; // TODO rename to _coefficients or include results into struct
 static bmp085_results_t bmp085_results;
 
-
+static sht11_t sht11;
+
+#define ALTITUDE_MUNICH 519
 
 static void dowork(void)
 {
-    dbgled_on(); // LED enable for 2s
+    dbgled_on(); // LED enable
+
     bmp085_read(&bmp085_results, &bmp085);
-    sht11_read();
+
+    uint32_t pNN = bmp085_calculate_pressure_nn(bmp085_results.pressure, ALTITUDE_MUNICH);
+    // Debug output
+    uart_puti16(bmp085_results.decicelsius); uart_space();
+    uart_puti32(bmp085_results.pressure); uart_space();
+    uart_putu32(pNN); uart_space();
+
+    sht11_init();
+    if (sht11_read(&sht11)) {
+        uart_puts_P("sht11 error"); // Debug output
+    } else {
+        // Debug output
+        uart_puti16(sht11.temp); uart_space();
+        uart_puti16(sht11.rh_true);
+    }
+    sht11_down();
+    uart_crlf(); // Debug output
+
     dbgled_off();
 }
 

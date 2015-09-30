@@ -44,7 +44,6 @@
 #undef _MB
 #undef _MC
 #undef _MD
-#undef _B5
 
 #define _AC1 (b085->AC1)
 #define _AC2 (b085->AC2)
@@ -57,7 +56,6 @@
 #define _MB (b085->MB)
 #define _MC (b085->MC)
 #define _MD (b085->MD)
-#define _B5 (b085->B5)
 
 
 
@@ -76,7 +74,6 @@ void bmp085_init(bmp085_t *b085)
     b085->MB = 0;
     b085->MC = 0;
     b085->MD = 0;
-    b085->B5 = 0;
 }
 
 // Reads BMP085 register value as uint16_t
@@ -202,12 +199,12 @@ error:
 // Param: ut - uncompensated temperature from BMP085
 // Param: bmp085 - structure with calibration coefficients
 // Return: temperature in deci Celsius
-int16_t bmp085_calculate_temperature(uint16_t ut, bmp085_t *b085)
+int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_t * const b085)
 {
     int32_t x1 = (((int32_t) ut - (int32_t) _AC6) * (int32_t) _AC5) >> 15;
     int32_t x2 = ((int32_t) _MC << 11) / (x1 + _MD);
-    _B5 = x1 + x2; // Value is reused in pressure calculation.
-    int16_t decicelsius = ((_B5 + 8) >> 4);
+    *B5 = x1 + x2; // Value is reused in pressure calculation.
+    int16_t decicelsius = ((*B5 + 8) >> 4);
 
     return decicelsius;
 }
@@ -216,12 +213,12 @@ int16_t bmp085_calculate_temperature(uint16_t ut, bmp085_t *b085)
 // Param: up - uncompensated pressure from BMP085
 // Param: b085 - BMP085 structure with calibration coefficients
 // Return: pressure in pascal (P)
-int32_t bmp085_calculate_true_pressure(uint32_t up, bmp085_t *b085, uint8_t oss)
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_t * const b085, uint8_t oss)
 {
     int32_t x1, x2, x3, b3, b6, p;
     uint32_t b4, b7;
 
-    b6 = _B5 - 4000;
+    b6 = *B5 - 4000;
 
     // Calculate B3
     x1 = (_B2 * (b6 * b6) >> 12) >> 11;
@@ -250,24 +247,20 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, bmp085_t *b085, uint8_t oss)
     return p;
 }
 
-// TODO enable it in bmp085_t with #ifdef
-
-// Calculate altitude.
-// Note: This can be done anywhere given the current pressure.
-// Param: p - true pressure
-// Return: altitude in meters (M)
-#if 0
 float bmp085_calculate_altitude(int32_t p)
 {
-    const float p0 = 101325;     // Pressure at sea level (Pa)
-    return (float)44330 * (1 - pow(((float) p/p0), 0.190295));
+    const float p0 = 101325; // Pressure at sea level in Pa
+    return (float) 44330 * (1 - pow(((float) p/p0), 0.190295));
 }
-#endif
 
-void bmp085_read(bmp085_results_t *res, const bmp085_t *bmp085)
+// NN is normal null
+uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude)
 {
-    // uart_putsln_P("dC  P     PNN");
+    return (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float) 5.255));
+}
 
+void bmp085_read(bmp085_results_t *res, const bmp085_t * const bmp085)
+{
     // Read uncompensated temperature value
     uint16_t ut = bmp085_read_ut();
 
@@ -275,25 +268,13 @@ void bmp085_read(bmp085_results_t *res, const bmp085_t *bmp085)
     uint32_t up = bmp085_read_up(BMP085_OSS_VALUE);
 
     // Calculate temperature in deci degress C
-    int16_t decicelsius = bmp085_calculate_temperature(ut, bmp085);
+    int32_t B5;
+    int16_t decicelsius = bmp085_calculate_temperature(ut, &B5, bmp085);
     res->decicelsius = decicelsius;
-    uart_puti16(decicelsius);
-    uart_putc(' ');
 
     // Calculate true pressure
-    int32_t p = bmp085_calculate_true_pressure(up, bmp085, BMP085_OSS_VALUE);
+    int32_t p = bmp085_calculate_true_pressure(up, &B5, bmp085, BMP085_OSS_VALUE);
     res->pressure = p;
-    uart_puti32(p);
-    uart_putc(' ');
-
-    // Calculate pressure NN
-#ifndef WITHOUT_BMP085_CALC_PRESSURE_NN
-    const uint16_t altitude = 691;
-    uint32_t pNN = (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float)5.255));
-    uart_putu32(pNN);
-#endif // WITHOUT_BMP085_CALC_PRESSURE_NN
-
-    uart_crlf();
 }
 
 // EOF
