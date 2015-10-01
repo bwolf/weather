@@ -127,10 +127,20 @@ static sht11_t sht11;
 
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
-#define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN
+#define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN // TODO maybe better in EEPROM
 
 static void dowork(void)
 {
+    static uint8_t once = 1;
+
+    // Debug output
+    if (once) {
+        once = !once;
+        uart_putsln_P("BMP085     SHT11");
+        uart_putsln_P("dC  P (NN) hC   hH%");
+        //             231 102464 2333 5036 -- For alignment of the header
+    }
+
     dbgled_on(); // LED enable
 
     bmp085_read(&bmp085_results, &bmp085);
@@ -138,7 +148,6 @@ static void dowork(void)
     uint32_t pNN = bmp085_calculate_pressure_nn(bmp085_results.pressure, ALTITUDE_SENSOR_LOCATION);
     // Debug output
     uart_puti16(bmp085_results.decicelsius); uart_space();
-    uart_puti32(bmp085_results.pressure);    uart_space();
     uart_putu32(pNN);                        uart_space();
 
     sht11_init();

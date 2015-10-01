@@ -254,9 +254,7 @@ float bmp085_calculate_altitude(int32_t p)
 // NN is normal null
 uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude)
 {
-    // Tgrad = Temperaturgradient
-    // Luftdruck auf Meereshoehe = Barometeranzeige /
-    //   (1-Tgrad*Hoehe/Temperatur auf Meereshöhe in Kelvin)^(0,03416/Temperaturgradient)
+    // Calculation according to Bosch data sheet
     return (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float) 5.255));
 }
 
