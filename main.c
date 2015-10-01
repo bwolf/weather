@@ -127,7 +127,7 @@ static sht11_t sht11;
 
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
-#define ALTITUDE_SENSOR ALTITUDE_HOLZKIRCHEN
+#define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN
 
 static void dowork(void)
 {
@@ -135,11 +135,11 @@ static void dowork(void)
 
     bmp085_read(&bmp085_results, &bmp085);
 
-    uint32_t pNN = bmp085_calculate_pressure_nn(bmp085_results.pressure, ALTITUDE_MUNICH);
+    uint32_t pNN = bmp085_calculate_pressure_nn(bmp085_results.pressure, ALTITUDE_SENSOR_LOCATION);
     // Debug output
     uart_puti16(bmp085_results.decicelsius); uart_space();
-    uart_puti32(bmp085_results.pressure); uart_space();
-    uart_putu32(pNN); uart_space();
+    uart_puti32(bmp085_results.pressure);    uart_space();
+    uart_putu32(pNN);                        uart_space();
 
     sht11_init();
     if (sht11_read(&sht11)) {
