@@ -11,6 +11,17 @@
 #undef WITHOUT_DBGLED
 #undef WITHOUT_POWERDOWN
 
+// Features inverse
+#ifndef WITHOUT_UART
+# define WITH_UART
+#endif
+#ifndef WITHOUT_DBGLED
+# define WITH_DBGLED
+#endif
+#ifndef WITHOUT_POWERDOWN
+# define WITH_POWERDOWN
+#endif
+
 // UART for debug output
 #define UART_BAUD_RATE 4800
 

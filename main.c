@@ -91,15 +91,10 @@ static uint8_t power_down_p(void)
 // Power down all subsystems.
 static void subsystems_power_down(void)
 {
-    // TODO power down subsystems
-
-    // SHT11
-    //sht11_down(); Is already put down after sensor reading
-
-    // BMP085
-    // bmp085_down(); // yet missing
-    // TODO check BMP085 datasheet if sensor can be powered down
-
+    // SHT11 Is always powered-down after sensor reading.
+    //
+    // BMP085 There is no explicit way to power-down the BMP085.
+    //
     // Disable TWI via TWEN bit. If this bit is written to zero, the
     // TWI is switched off and all TWI transmissions are terminated,
     // regardless of any ongoing operation.
@@ -109,18 +104,16 @@ static void subsystems_power_down(void)
 // Power up all subsystems
 static void subsystems_power_up(void)
 {
-    // TODO power up subsystems
-
-    // TWI/I2C
+    // See info in power_down regarding subsystems not powered-up here.
     //
-    // Does not work after power save mode. Reset TWI register to
-    // correct values.
+    // TWI/I2C Does not work after power save mode. Reset TWI register
+    // to correct values.
     TWCR &= ~((1 << TWSTO) | (1 << TWEN));
     TWCR |= (1 << TWEN);
 }
 
 
-static bmp085_t bmp085; // TODO rename to _coefficients or include results into struct
+static bmp085_t bmp085;
 static bmp085_results_t bmp085_results;
 
 static sht11_t sht11;
@@ -197,7 +190,7 @@ main(void)
 
     sei(); // With interrupts...
 
-#ifndef WITHOUT_POWERDOWN
+#ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down
 #endif
 
@@ -219,7 +212,7 @@ main(void)
             ;
 
         if (power_down_p()) {
-#ifndef WITHOUT_POWERDOWN
+#ifdef WITH_POWERDOWN
             power_down = 1;
             subsystems_power_down();
             set_sleep_mode(SLEEP_MODE_PWR_SAVE);
@@ -230,7 +223,7 @@ main(void)
         // Here we wakeup from sleep mode, after execution of the
         // timer2 interrupt
         _delay_ms(1000); // Wait until external resonator is stable
-#ifndef WITHOUT_POWERDOWN
+#ifdef WITH_POWERDOWN
         if (power_down) {
             power_down = 0;
             subsystems_power_up();
