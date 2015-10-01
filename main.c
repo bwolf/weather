@@ -125,7 +125,9 @@ static bmp085_results_t bmp085_results;
 
 static sht11_t sht11;
 
-#define ALTITUDE_MUNICH 519
+#define ALTITUDE_MUNICH      519
+#define ALTITUDE_HOLZKIRCHEN 691
+#define ALTITUDE_SENSOR ALTITUDE_HOLZKIRCHEN
 
 static void dowork(void)
 {
