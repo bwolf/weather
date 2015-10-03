@@ -29,13 +29,13 @@
 #define SCL_CLOCK 10000UL
 
 // BMP085
-#include "bmp085_config.h"
+#include <bmp085/bmp085_config.h>
 #define BMP085_OSS_VALUE BMP085_OVERSAMPLING_STANDARD
 #undef WITHOUT_BMP085_CALC_PRESSURE_NN
 #define BMP085_WITH_UART_ERROR_MSGS
 
 // SHT11 configuration
-#include "sht11_config.h"
+#include <sht11/sht11_config.h>
 #define SHT11_CONVERT_SENSIRION
 #undef  SHT11_CONVERT_SIMPLE
 #undef  SHT11_CONVERT_ALT_COMPENSATED
@@ -48,5 +48,16 @@
 #define SHT11_SDA     PC1
 #define SHT11_PIN     PINC
 #define SHT11_PIN_SDA PINC1
+
+// nRF24L01+ configuration
+#define wl_module_CONFIG_DDR DDRC
+#define wl_module_CONFIG_CE  PC0
+#define wl_module_CONFIG_CSN PC1
+// Set external interrupt on falling edge for INT0
+#define WIRELESS_INTERRUPT_FALLING_EDGE() (MCUCR = (1 << ISC01) | (0 << ISC00))
+#define WIRELESS_INTERRUPT_ENABLE() (GICR = (1 << INT0))
+#define WIRELESS_INTERRUPT_VECT INT0_vect
+
+
 
 #endif // CONFIG_H

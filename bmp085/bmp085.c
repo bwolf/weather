@@ -20,9 +20,9 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#include "uart.h"
-#include "uart_addons.h"
-#include "twim.h"
+#include <uart/uart.h>
+#include <uart/uart_addons.h>
+#include <twim/twim.h>
 
 #include "bmp085.h"
 

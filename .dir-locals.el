@@ -10,6 +10,7 @@
                             flycheck-gcc-args '("-mmcu=atmega8" "-Os")
                             flycheck-gcc-definitions '("F_OSC=1000000")
                             flycheck-gcc-language-standard "gnu99"
+                            flycheck-gcc-include-path '(".")
                             flycheck-gcc-warnings '("all" "extra" "strict-prototypes" "fatal-errors"))
                       (set (make-local-variable 'company-c-headers-path-system) nil)
                       (setq company-c-headers-path-system
