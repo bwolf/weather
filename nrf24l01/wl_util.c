@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #include <uart/uart.h>
 #include <uart/uart_addons.h>

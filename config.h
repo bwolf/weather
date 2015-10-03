@@ -55,9 +55,9 @@
 #define wl_module_CONFIG_CSN PC1
 // Set external interrupt on falling edge for INT0
 #define WIRELESS_INTERRUPT_FALLING_EDGE() (MCUCR = (1 << ISC01) | (0 << ISC00))
+// Activate external interrupt INT0
 #define WIRELESS_INTERRUPT_ENABLE() (GICR = (1 << INT0))
+// Name of the interrupt vector
 #define WIRELESS_INTERRUPT_VECT INT0_vect
-
-
 
 #endif // CONFIG_H

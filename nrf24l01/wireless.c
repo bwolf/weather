@@ -4,8 +4,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include "dbgled.h"
-#include "spi.h"
+#include <spi/spi.h>
+
 #include "wl_module.h"
 #include "wl_util.h"
 #include "nRF24L01.h"
@@ -95,9 +95,6 @@ ISR(WIRELESS_INTERRUPT_VECT)
 {
     uint8_t status;
 
-    // TODO Toggle IRQ debug led
-    PINC |= (1 << PINC6);
-
     //  Read wl_module status
     wl_module_CSN_lo;             //  Pull down chip select
     status = spi_fast_shift(NOP); //  Read status register
@@ -105,7 +102,6 @@ ISR(WIRELESS_INTERRUPT_VECT)
 
     //  IRQ: Package has been sent
     if (status & (1 << TX_DS)) {
-        dbgled_pulse(1);
         wl_module_config_register(STATUS, (1 << TX_DS));  //  Clear Interrupt Bit
         PTX = 0; // Unflag transmission mode
     }
@@ -126,6 +122,7 @@ ISR(WIRELESS_INTERRUPT_VECT)
         wl_module_CSN_lo;         //  Pull down chip select
         spi_fast_shift(FLUSH_TX); //  Flush TX-FIFO
         wl_module_CSN_hi;         //  Pull up chip select
-        dbgled_pulse(4);
     }
 }
+
+// EOF

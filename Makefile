@@ -51,7 +51,8 @@ TARGET = main
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c uart/uart.c uart/uart_addons.c bmp085/bmp085.c        \
-	sht11/sht11.c twim/twim.c spi/spi.c nrf24l01/wl_module.c nrf24l01/wl_util.c
+	sht11/sht11.c twim/twim.c spi/spi.c \
+	nrf24l01/wl_module.c nrf24l01/wl_util.c nrf24l01/wireless.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s
