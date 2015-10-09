@@ -7,14 +7,14 @@
 
 #include <util/delay.h>
 
-#include <uart/uart.h>
-#include <uart/uart_addons.h>
+#include "uart.h"
+#include "uart_addons.h"
 
-#include <twim/twim.h>
-#include <bmp085/bmp085.h>
-#include <sht11/sht11.h>
+#include "twim.h"
+#include "bmp085.h"
+#include "sht11.h"
 
-#include <nrf24l01/wireless.h>
+#include "wl_highlevel.h"
 
 
 #ifdef WITHOUT_POWERDOWN

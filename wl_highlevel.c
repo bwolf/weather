@@ -4,11 +4,13 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <spi.h>
+#include "spi.h"
 
 #include "wl_module.h"
 #include "wl_util.h"
 #include "nRF24L01.h"
+
+#include "wl_highlevel.h"
 
 #if WIRELESS_MAX_PAYLOAD > wl_module_PAYLOAD
 # error "Inconsistent wireless vs. wl_module payload size!"

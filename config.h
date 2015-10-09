@@ -29,13 +29,13 @@
 #define SCL_CLOCK 10000UL
 
 // BMP085
-#include <bmp085/bmp085_config.h>
+#include "bmp085_config.h"
 #define BMP085_OSS_VALUE BMP085_OVERSAMPLING_STANDARD
 #undef WITHOUT_BMP085_CALC_PRESSURE_NN
 #define BMP085_WITH_UART_ERROR_MSGS
 
 // SHT11 configuration
-#include <sht11/sht11_config.h>
+#include "sht11_config.h"
 #define SHT11_CONVERT_SENSIRION
 #undef  SHT11_CONVERT_SIMPLE
 #undef  SHT11_CONVERT_ALT_COMPENSATED

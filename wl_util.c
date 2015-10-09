@@ -3,10 +3,10 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-#include <uart/uart.h>
-#include <uart/uart_addons.h>
+#include "uart.h"
+#include "uart_addons.h"
 
-#include <spi.h>
+#include "spi.h"
 
 #include "wl_module.h"
 #include "nRF24L01.h"
