@@ -31,20 +31,45 @@
 
 #include "spi.h"
 
-#define PORT_SPI    PORTB
-#define DDR_SPI     DDRB
-#define DD_MISO     DDB3
-#define DD_MOSI     DDB2
-#define DD_SS       DDB0
-#define DD_SCK      DDB1
+// A definition like the following is required from config.h
+// #define SPI_PORT    PORTB
+// #define SPI_DDR     DDRB
+// #define SPI_DD_MISO DDB4
+// #define SPI_DD_MOSI DDB3
+// #define SPI_DD_SS   DDB2
+// #define SPI_DD_SCK  DDB5
+
+#ifndef SPI_PORT
+# error "Missing definition for SPI port."
+#endif
+
+#ifndef SPI_DDR
+# error "Missing definition for SPI DDR."
+#endif
+
+#ifndef SPI_DD_MISO
+# error "Missing definition for SPI DDR MISO."
+#endif
+
+#ifndef SPI_DD_MOSI
+# error "Missing definition for SPI DDR MOSI."
+#endif
+
+#ifndef SPI_DD_SS
+# error "Missing definition for SPI DDR SS."
+#endif
+
+#ifndef SPI_DD_SCK
+# error "Missing definition for SPI DDR SCK."
+#endif
 
 // Initialize pins for spi communication
 void spi_init()
 {
-    DDR_SPI &= ~((1 << DD_MOSI) | (1 << DD_MISO) | (1 << DD_SS) | (1 << DD_SCK));
+    SPI_DDR &= ~((1 << SPI_DD_MOSI) | (1 << SPI_DD_MISO) | (1 << SPI_DD_SS) | (1 << SPI_DD_SCK));
 
     // Define the following pins as output
-    DDR_SPI |= ((1 << DD_MOSI) | (1 << DD_SS) | (1 << DD_SCK));
+    SPI_DDR |= ((1 << SPI_DD_MOSI) | (1 << SPI_DD_SS) | (1 << SPI_DD_SCK));
 
     SPCR = ((1 << SPE)  |              // SPI Enable
             (0 << SPIE) |              // SPI Interupt Enable

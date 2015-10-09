@@ -6,7 +6,7 @@
 #include <uart/uart.h>
 #include <uart/uart_addons.h>
 
-#include <spi/spi.h>
+#include <spi.h>
 
 #include "wl_module.h"
 #include "nRF24L01.h"

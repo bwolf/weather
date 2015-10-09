@@ -30,7 +30,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <spi/spi.h>
+#include <spi.h>
 #include "nRF24L01.h"
 #include "wl_module.h"
 

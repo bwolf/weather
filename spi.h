@@ -27,8 +27,6 @@
 #ifndef SPI_H
 #define SPI_H
 
-/* #include <avr/io.h> */
-
 void spi_init(void);
 void spi_transfer_sync(uint8_t *dataout, uint8_t *datain, uint8_t len);
 void spi_transmit_sync(uint8_t *dataout, uint8_t len);

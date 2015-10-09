@@ -14,6 +14,8 @@
 #include <bmp085/bmp085.h>
 #include <sht11/sht11.h>
 
+#include <nrf24l01/wireless.h>
+
 
 #ifdef WITHOUT_POWERDOWN
 # warning "Compiling without power saving (powerdown)!"
@@ -44,40 +46,57 @@ static inline void disable_analog_comparator(void)
 
 
 #ifndef WITHOUT_DBGLED
-static uint8_t led = 0;
+static volatile uint8_t dbgled_red = 0;
+static volatile uint8_t dbgled_green = 0;
 
-#define dbgled_init()   DDRB |= (1 << DDB0)
-#define dbgled_on() led = 1; PORTB |= (1 << PB0)
-#define dbgled_off() led = 0; PORTB &= ~(1 << PB0)
+#define dbgled_red_init() DDRB |= (1 << DDB0)
+#define dbgled_red_on()   dbgled_red = 1; PORTB |= (1 << PB0)
+#define dbgled_red_off()  dbgled_red = 0; PORTB &= ~(1 << PB0)
 
-// static void dbgled_toggle(void)
+#define dbgled_green_init() DDRB |= (1 << DDB1)
+#define dbgled_green_on()   dbgled_green = 1; PORTB |= (1 << PB1)
+#define dbgled_green_off()  dbgled_green = 0; PORTB &= ~(1 << PB1)
+
+// static void dbgled_red_toggle(void)
 // {
-//     if (led) {
-//         dbgled_off();
+//     if (dbgled_red) {
+//         dbgled_red_off();
+//         dbgled_red = 0;
 //     } else {
-//         dbgled_on();
+//         dbgled_red_on();
+//         dbgled_red = 1;
 //     }
-//     led = !led;
 // }
 
-// static void dbgled_pulse(uint8_t p)
+void dbgled_green_toggle(void)
+{
+    if (dbgled_green) {
+        dbgled_green_off();
+        dbgled_green = 0;
+    } else {
+        dbgled_green_on();
+        dbgled_green = 1;
+    }
+}
+
+// static void dbgled_red_pulse(uint8_t p)
 // {
 //     uint8_t n;
 
 //     for (n = 0; n < p; n++) {
-//         dbgled_on();
+//         dbgled_red_on();
 //         _delay_ms(50);
-//         dbgled_off();
+//         dbgled_red_off();
 //         _delay_ms(50);
 //     }
 // }
 
 #else
-# warning "Building without debug LED, you won't see any blinking!"
-# define dbgled_init()
-# define dbgled_on()
-# define dbgled_off()
-# define dbgled_pulse(p) (void) p
+# warning "Building without red debug LED, you won't see any blinking!"
+# define dbgled_red_init()
+# define dbgled_red_on()
+# define dbgled_red_off()
+# define dbgled_red_pulse(p) (void) p
 #endif
 
 
@@ -134,7 +153,12 @@ static void dowork(void)
         //             231 102464 2333 5036 -- For alignment of the header
     }
 
-    dbgled_on(); // LED enable
+    dbgled_red_on(); // LED enable
+
+    if (wireless_is_busy()) {
+        // Do nothing, give wireless module time to finish
+        wireless_debug_print_status();
+    }
 
     bmp085_read(&bmp085_results, &bmp085);
 
@@ -154,7 +178,7 @@ static void dowork(void)
     sht11_down();
     uart_crlf(); // Debug output
 
-    dbgled_off();
+    dbgled_red_off();
 }
 
 
@@ -170,7 +194,8 @@ main(void)
 
     _delay_ms(100);
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
-    dbgled_init();
+    dbgled_red_init();
+    dbgled_green_init();
 
     twi_init();
     bmp085_init(&bmp085);
@@ -190,11 +215,21 @@ main(void)
 
     sei(); // With interrupts...
 
+    uart_ff();
+
+    // Wireless setup requires interrupts
+    _delay_ms(50); // TODO delay required?
+    wireless_init();
+
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down
 #endif
 
-    uart_ff();
+    // Debug only
+    _delay_ms(500);
+    uart_putc(wireless_get_channel() + '0');
+    uart_putsln_P(" ch");
+
     while (1) {
         // Give outstanding operations time to complete (e.g. UART)
         _delay_ms(100);
@@ -211,24 +246,24 @@ main(void)
         while((ASSR & (1<< OCR2UB))) // Wait until register access has completed
             ;
 
-        if (power_down_p()) {
-#ifdef WITH_POWERDOWN
-            power_down = 1;
-            subsystems_power_down();
-            set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-            sleep_mode(); // This power downs the MCU
-#endif
-        }
+//         if (power_down_p()) {
+// #ifdef WITH_POWERDOWN
+//             power_down = 1;
+//             subsystems_power_down();
+//             set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+//             sleep_mode(); // This power downs the MCU
+// #endif
+//         }
 
         // Here we wakeup from sleep mode, after execution of the
         // timer2 interrupt
         _delay_ms(1000); // Wait until external resonator is stable
-#ifdef WITH_POWERDOWN
-        if (power_down) {
-            power_down = 0;
-            subsystems_power_up();
-        }
-#endif
+// #ifdef WITH_POWERDOWN
+//         if (power_down) {
+//             power_down = 0;
+//             subsystems_power_up();
+//         }
+// #endif
         if (dowork_flag) { // Flag is signaled in timer2 interrupt
             dowork_flag = 0;
             dowork();
@@ -245,7 +280,7 @@ ISR(TIMER2_OVF_vect)
         ticks = 0;
         dowork_flag = 1; // Flag main loop to do measurement
     }
-    dbgled_off(); // TODO remove
+    dbgled_red_off(); // TODO remove
 }
 
 // EOF

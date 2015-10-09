@@ -4,7 +4,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <spi/spi.h>
+#include <spi.h>
 
 #include "wl_module.h"
 #include "wl_util.h"
@@ -91,9 +91,14 @@ uint8_t wireless_get_channel(void)
     return wl_module_get_rf_ch();
 }
 
+void dbgled_green_toggle(void);
+
 ISR(WIRELESS_INTERRUPT_VECT)
 {
     uint8_t status;
+
+    // TODO remove
+    dbgled_green_toggle();
 
     //  Read wl_module status
     wl_module_CSN_lo;             //  Pull down chip select

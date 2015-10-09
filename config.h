@@ -9,7 +9,7 @@
 // Features
 #undef WITHOUT_UART
 #undef WITHOUT_DBGLED
-#undef WITHOUT_POWERDOWN
+#define WITHOUT_POWERDOWN
 
 // Features inverse
 #ifndef WITHOUT_UART
@@ -49,10 +49,18 @@
 #define SHT11_PIN     PINC
 #define SHT11_PIN_SDA PINC1
 
+// SPI configuration
+#define SPI_PORT    PORTB
+#define SPI_DDR     DDRB
+#define SPI_DD_MISO DDB4
+#define SPI_DD_MOSI DDB3
+#define SPI_DD_SS   DDB2
+#define SPI_DD_SCK  DDB5
+
 // nRF24L01+ configuration
 #define wl_module_CONFIG_DDR DDRC
-#define wl_module_CONFIG_CE  PC0
-#define wl_module_CONFIG_CSN PC1
+#define wl_module_CONFIG_CE  PC2
+#define wl_module_CONFIG_CSN PC3
 // Set external interrupt on falling edge for INT0
 #define WIRELESS_INTERRUPT_FALLING_EDGE() (MCUCR = (1 << ISC01) | (0 << ISC00))
 // Activate external interrupt INT0
