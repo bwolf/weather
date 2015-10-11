@@ -1,4 +1,5 @@
 /.dep/
+/cscope.out
 /TAGS
 *.eep
 *.elf
