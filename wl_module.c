@@ -34,16 +34,20 @@
 #include "nRF24L01.h"
 #include "wl_module.h"
 
-#ifndef wl_module_CONFIG_DDR
-# error "Missing definition of wl_module_CONFIG_DDR!"
+#ifndef WL_MODULE_DDR
+# error "Missing definition of WL_MODULE_DDR!"
 #endif
 
-#ifndef wl_module_CONFIG_CE
-# error "Missing definition of wl_module_CONFIG_CE!"
+#ifndef WL_MODULE_PORT
+# error "Missing definition of WL_MODULE_PORT!"
 #endif
 
-#ifndef wl_module_CONFIG_CSN
-# error "Missing definition of wl_module_CONFIG_CSN!"
+#ifndef WL_MODULE_CE
+# error "Missing definition of WL_MODULE_CE!"
+#endif
+
+#ifndef WL_MODULE_CSN
+# error "Missing definition of WL_MODULE_CSN!"
 #endif
 
 // Flag which denotes transmitting mode
@@ -54,7 +58,7 @@ volatile uint8_t PTX;
 void wl_module_init(void)
 {
     // Define CSN and CE as Output and set them to default
-    wl_module_CONFIG_DDR |= ((1 << wl_module_CONFIG_CSN) | (1 << wl_module_CONFIG_CE));
+    WL_MODULE_DDR |= ((1 << WL_MODULE_CSN) | (1 << WL_MODULE_CE));
     wl_module_CE_lo;
     wl_module_CSN_hi;
 
@@ -85,7 +89,7 @@ void wl_module_init(void)
 // #endif
 
     // Initialize spi module
-    spi_init();
+    // spi_init();
 }
 
 // Sets the important registers in the wl-module and powers the module

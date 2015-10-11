@@ -46,14 +46,13 @@ extern volatile uint8_t PTX;
 #define wl_module_TX_NR_5    5
 
 // Pin definitions for chip select and chip enabled of the wl-module
-// #define CE  PB4
-// #define CSN PB5
+// are defined in config.h and referenced in wl_module.c.
 
 // Definitions for selecting and enabling wl_module module
-#define wl_module_CSN_hi PORTB |=  (1 << wl_module_CONFIG_CSN);
-#define wl_module_CSN_lo PORTB &= ~(1 << wl_module_CONFIG_CSN);
-#define wl_module_CE_hi  PORTB |=  (1 << wl_module_CONFIG_CE);
-#define wl_module_CE_lo  PORTB &= ~(1 << wl_module_CONFIG_CE);
+#define wl_module_CSN_hi WL_MODULE_PORT |=  (1 << WL_MODULE_CSN);
+#define wl_module_CSN_lo WL_MODULE_PORT &= ~(1 << WL_MODULE_CSN);
+#define wl_module_CE_hi  WL_MODULE_PORT |=  (1 << WL_MODULE_CE);
+#define wl_module_CE_lo  WL_MODULE_PORT &= ~(1 << WL_MODULE_CE);
 
 // Defines for setting the wl_module registers for transmitting or receiving mode
 #define TX_POWERUP wl_module_config_register(CONFIG, wl_module_CONFIG | ((1 << PWR_UP) | (0 << PRIM_RX)))

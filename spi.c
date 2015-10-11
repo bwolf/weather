@@ -63,7 +63,7 @@
 # error "Missing definition for SPI DDR SCK."
 #endif
 
-// Initialize pins for spi communication
+// Initialize pins for SPI communication
 void spi_init()
 {
     SPI_DDR &= ~((1 << SPI_DD_MOSI) | (1 << SPI_DD_MISO) | (1 << SPI_DD_SS) | (1 << SPI_DD_SCK));
@@ -71,15 +71,15 @@ void spi_init()
     // Define the following pins as output
     SPI_DDR |= ((1 << SPI_DD_MOSI) | (1 << SPI_DD_SS) | (1 << SPI_DD_SCK));
 
-    SPCR = ((1 << SPE)  |              // SPI Enable
-            (0 << SPIE) |              // SPI Interupt Enable
-            (0 << DORD) |              // Data Order (0:MSB first / 1:LSB first)
-            (1 << MSTR) |              // Master/Slave select
-            (0 << SPR1) | (1 << SPR0)| // SPI Clock Rate
-            (0 << CPOL) |              // Clock Polarity (0:SCK low / 1:SCK hi when idle)
-            (0 << CPHA));              // Clock Phase (0:leading / 1:trailing edge sampling)
+    SPCR = ((1 << SPE)  |               // SPI Enable
+            (0 << SPIE) |               // SPI Interupt Enable
+            (0 << DORD) |               // Data Order (0:MSB first / 1:LSB first)
+            (1 << MSTR) |               // Master/Slave select
+            (0 << SPR1) | (1 << SPR0) | // SPI Clock Rate
+            (0 << CPOL) |               // Clock Polarity (0:SCK low / 1:SCK hi when idle)
+            (0 << CPHA));               // Clock Phase (0:leading / 1:trailing edge sampling)
 
-    SPSR = (1 << SPI2X);               // Double Clock Rate
+    SPSR = (1 << SPI2X);                // Double Clock Rate
 }
 
 // Shift full array through target device

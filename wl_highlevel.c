@@ -22,17 +22,18 @@ void wireless_init(void)
 {
     uint8_t k;
 
-    // Configurate interrupt before initializing wl_module, because it
-    // immediately enables SPI
-    WIRELESS_INTERRUPT_FALLING_EDGE();
-    WIRELESS_INTERRUPT_ENABLE();
-
     // Requires configured interrupt, initializes SPI
     wl_module_init();
     _delay_ms(50);
+    // Configurate the interrupt
+    WIRELESS_INTERRUPT_FALLING_EDGE();
+    WIRELESS_INTERRUPT_ENABLE();
+    // Configure SPI
+    spi_init();
 
-    wl_module_tx_config(wl_module_TX_NR_0); // Config Module
-
+    // Config Module
+    wl_module_tx_config(wl_module_TX_NR_0);
+    // Wait for configuration to complete
     _delay_ms(10);
 
     // Check MAX_RT
@@ -93,14 +94,13 @@ uint8_t wireless_get_channel(void)
     return wl_module_get_rf_ch();
 }
 
-void dbgled_green_toggle(void);
+void dbgled_green_toggle(void); // TODO remove
 
 ISR(WIRELESS_INTERRUPT_VECT)
 {
     uint8_t status;
 
-    // TODO remove
-    dbgled_green_toggle();
+    dbgled_green_toggle(); // TODO remove
 
     //  Read wl_module status
     wl_module_CSN_lo;             //  Pull down chip select
