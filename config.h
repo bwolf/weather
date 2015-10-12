@@ -9,7 +9,7 @@
 // Features
 #undef WITHOUT_UART
 #undef WITHOUT_DBGLED
-#define WITHOUT_POWERDOWN
+#undef WITHOUT_POWERDOWN
 
 // Features inverse
 #ifndef WITHOUT_UART
