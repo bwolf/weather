@@ -115,7 +115,7 @@ void dbgled_green_toggle(void)
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
-    if (wireless_is_busy()) {
+    if (wlhl_is_busy()) {
         return 0;
     }
 
@@ -135,7 +135,7 @@ static void subsystems_power_down(void)
     TWCR &= ~(1 << TWEN);
 
     // Power-down nRF24L01+
-    wireless_power_down();
+    wlhl_power_down();
 }
 
 // Power up all subsystems
@@ -149,13 +149,13 @@ static void subsystems_power_up(void)
     TWCR |= (1 << TWEN);
 
     // Power-down nRF24L01+
-    wireless_power_up();
+    wlhl_power_up();
 }
 
 
 static bmp085_coeff_t bmp085_coeff;
 
-typedef struct payload {
+typedef struct payload { // TODO move somewhere e.g. config.h to get compile time constant of payload size
     bmp085_t bmp085;
     sht11_t sht11;
 } payload_t;
@@ -186,10 +186,10 @@ static void dowork(void)
     // wl_hlpowerdown()
     // wl_hltransmit()
     // wl_hlinit()
-    if (wireless_is_busy()) {
+    if (wlhl_is_busy()) {
         // Do nothing, give wireless module time to finish
         uart_putsln_P("wireless_is_busy");
-        wireless_debug_print_status();
+        wlhl_debug_print_status();
     } else {
         bmp085_read(&payload.bmp085, &bmp085_coeff);
 
@@ -213,7 +213,7 @@ static void dowork(void)
         uart_puts_P("Transsmit ");
         uart_putu8(sizeof(payload));
         uart_crlf();
-        wireless_send_payload((uint8_t *) &payload, sizeof(payload));
+        wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
     }
 
     dbgled_red_off();
@@ -257,7 +257,7 @@ main(void)
 
     // Wireless setup requires interrupts
     _delay_ms(50); // TODO delay required?
-    wireless_init();
+    wlhl_init();
 
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down
@@ -265,7 +265,7 @@ main(void)
 
     // Debug only
     _delay_ms(500);
-    uart_putc(wireless_get_channel() + '0');
+    uart_putc(wlhl_get_channel() + '0');
     uart_putsln_P(" ch");
 
     // static uint8_t count = 0;

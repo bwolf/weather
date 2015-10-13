@@ -18,7 +18,7 @@
 
 // Initialize wireless module.
 // Requires interrupts to be enabled.
-void wireless_init(void)
+void wlhl_init(void)
 {
     uint8_t k;
 
@@ -52,30 +52,30 @@ void wireless_init(void)
     wl_module_CSN_hi;           // Pull up chip select
 }
 
-uint8_t wireless_is_busy(void)
+uint8_t wlhl_is_busy(void)
 {
     return PTX;
 }
 
-void wireless_debug_print_status(void)
+void wlhl_debug_print_status(void)
 {
     wl_util_print_config_register();
     wl_util_print_status_register();
 }
 
 // Power up 24L01+ and delay according to spec 6.1.7ff
-void wireless_power_up(void)
+void wlhl_power_up(void)
 {
     wl_module_power_up();
     _delay_ms(5); // Sane delay
 }
 
-void wireless_power_down(void)
+void wlhl_power_down(void)
 {
     wl_module_power_down();
 }
 
-void wireless_send_payload(uint8_t *data, uint8_t len)
+void wlhl_send_payload(uint8_t *data, uint8_t len)
 {
     uint8_t payload[wl_module_PAYLOAD];
     uint8_t k;
@@ -89,7 +89,7 @@ void wireless_send_payload(uint8_t *data, uint8_t len)
     wl_module_send(payload, wl_module_PAYLOAD);
 }
 
-uint8_t wireless_get_channel(void)
+uint8_t wlhl_get_channel(void)
 {
     return wl_module_get_rf_ch();
 }
