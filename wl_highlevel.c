@@ -22,6 +22,7 @@ void wlhl_init(void)
 {
     uint8_t k;
 
+    // -- Basic config
     // Requires configured interrupt, initializes SPI
     wl_module_init();
     _delay_ms(50);
@@ -31,14 +32,18 @@ void wlhl_init(void)
     // Configure SPI
     spi_init();
 
-    // Config Module
+    // -- Config Module
     wl_module_tx_config(wl_module_TX_NR_0);
     // Wait for configuration to complete
     _delay_ms(10);
 
-    // Check MAX_RT
-    wl_util_print_config_register();
-    k = wl_util_print_status_register();
+    // -- Check MAX_RT
+    //wl_util_print_config_register();
+    //k = wl_util_print_status_register();
+    // Read wl_module status
+    wl_module_CSN_lo;        //  Pull down chip select
+    k = spi_fast_shift(NOP); // Read status register
+    wl_module_CSN_hi;        // Pull up chip select
     if (k & STATUS_MAX_RT) {
         // Clearing STATUS_MAX_RT
         wl_module_config_register(STATUS, (1 << MAX_RT));
