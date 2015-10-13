@@ -154,9 +154,13 @@ static void subsystems_power_up(void)
 
 
 static bmp085_coeff_t bmp085_coeff;
-static bmp085_t bmp085;
 
-static sht11_t sht11;
+typedef struct payload {
+    bmp085_t bmp085;
+    sht11_t sht11;
+} payload_t;
+
+static payload_t payload;
 
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
@@ -187,37 +191,25 @@ static void dowork(void)
         uart_putsln_P("wireless_is_busy");
         wireless_debug_print_status();
     } else {
-        bmp085_read(&bmp085, &bmp085_coeff);
+        bmp085_read(&payload.bmp085, &bmp085_coeff);
 
-        uint32_t pNN = bmp085_calculate_pressure_nn(bmp085.pressure, ALTITUDE_SENSOR_LOCATION);
+        uint32_t pNN = bmp085_calculate_pressure_nn(payload.bmp085.pressure, ALTITUDE_SENSOR_LOCATION);
         // Debug output
-        uart_puti16(bmp085.decicelsius); uart_space();
-        uart_putu32(pNN);                uart_space();
+        uart_puti16(payload.bmp085.decicelsius); uart_space();
+        uart_putu32(pNN);                        uart_space();
 
         sht11_init();
-        if (sht11_read(&sht11)) {
+        if (sht11_read(&payload.sht11)) {
             uart_puts_P("sht11 error"); // Debug output
         } else {
             // Debug output
-            uart_puti16(sht11.temp); uart_space();
-            uart_puti16(sht11.rh_true);
+            uart_puti16(payload.sht11.temp); uart_space();
+            uart_puti16(payload.sht11.rh_true);
         }
         sht11_down();
         uart_crlf(); // Debug output
 
         // Transmit measurements
-        struct {
-            int16_t bmp085_decicelsius;
-            uint32_t bmp085_pNN;
-            int16_t sht11_milicelsius;
-            int16_t sht11_rh_true;
-        } payload;
-
-        payload.bmp085_decicelsius = bmp085.decicelsius;
-        payload.bmp085_pNN = pNN;
-        payload.sht11_milicelsius = sht11.temp;
-        payload.sht11_rh_true = sht11.rh_true;
-
         uart_puts_P("Transsmit ");
         uart_putu8(sizeof(payload));
         uart_crlf();

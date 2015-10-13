@@ -423,6 +423,12 @@ uint8_t sht11_read(sht11_t *sht11)
     sht11->rh_true = sht11_humid_convert_alt_compensated(temp, humid);
 #endif
 
+#ifdef SHT11_WITH_RAW_SENSOR_VALUES
+# warning "Compiling with raw SHT11 sensor values. Use this only for debug."
+    sht11->raw_temp = temp;
+    sht11->raw_humi = humid;
+#endif
+
     return 0;
 }
 

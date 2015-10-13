@@ -9,6 +9,10 @@
 typedef struct sht11 {
     int16_t temp;
     int16_t rh_true;
+#ifdef SHT11_WITH_RAW_SENSOR_VALUES
+    int16_t raw_temp;
+    int16_t raw_humi;
+#endif
 } sht11_t;
 
 #define SHT11_READ_ERROR_TEMP_START  1
