@@ -59,7 +59,7 @@
 
 // Init struct with sane values. Otherwise gcc complains about maybe
 // unitialized members.
-void bmp085_init(bmp085_t *b085)
+void bmp085_init(bmp085_coeff_t *b085)
 {
     b085->AC1 = 0;
     b085->AC2 = 0;
@@ -97,7 +97,7 @@ error:
 }
 
 // Read calibration coefficients from BMP085 eeprom
-void bmp085_read_calibration_coefficients(bmp085_t *b085)
+void bmp085_read_calibration_coefficients(bmp085_coeff_t *b085)
 {
 #undef  BMP085_GET_CP
 #define BMP085_GET_CP(prnfn, name, reg_addr)                            \
@@ -197,7 +197,7 @@ error:
 // Param: ut - uncompensated temperature from BMP085
 // Param: bmp085 - structure with calibration coefficients
 // Return: temperature in deci Celsius
-int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_t * const b085)
+int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coeff_t * const b085)
 {
     int32_t x1 = (((int32_t) ut - (int32_t) _AC6) * (int32_t) _AC5) >> 15;
     int32_t x2 = ((int32_t) _MC << 11) / (x1 + _MD);
@@ -211,7 +211,7 @@ int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_t * 
 // Param: up - uncompensated pressure from BMP085
 // Param: b085 - BMP085 structure with calibration coefficients
 // Return: pressure in pascal (P)
-int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_t * const b085, uint8_t oss)
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085, uint8_t oss)
 {
     int32_t x1, x2, x3, b3, b6, p;
     uint32_t b4, b7;
@@ -258,7 +258,7 @@ uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude)
     return (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float) 5.255));
 }
 
-void bmp085_read(bmp085_results_t *res, const bmp085_t * const bmp085)
+void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
 {
     // Read uncompensated temperature value
     uint16_t ut = bmp085_read_ut();

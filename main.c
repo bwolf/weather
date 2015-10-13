@@ -153,8 +153,8 @@ static void subsystems_power_up(void)
 }
 
 
+static bmp085_coeff_t bmp085_coeff;
 static bmp085_t bmp085;
-static bmp085_results_t bmp085_results;
 
 static sht11_t sht11;
 
@@ -187,12 +187,12 @@ static void dowork(void)
         uart_putsln_P("wireless_is_busy");
         wireless_debug_print_status();
     } else {
-        bmp085_read(&bmp085_results, &bmp085);
+        bmp085_read(&bmp085, &bmp085_coeff);
 
-        uint32_t pNN = bmp085_calculate_pressure_nn(bmp085_results.pressure, ALTITUDE_SENSOR_LOCATION);
+        uint32_t pNN = bmp085_calculate_pressure_nn(bmp085.pressure, ALTITUDE_SENSOR_LOCATION);
         // Debug output
-        uart_puti16(bmp085_results.decicelsius); uart_space();
-        uart_putu32(pNN);                        uart_space();
+        uart_puti16(bmp085.decicelsius); uart_space();
+        uart_putu32(pNN);                uart_space();
 
         sht11_init();
         if (sht11_read(&sht11)) {
@@ -213,7 +213,7 @@ static void dowork(void)
             int16_t sht11_rh_true;
         } payload;
 
-        payload.bmp085_decicelsius = bmp085_results.decicelsius;
+        payload.bmp085_decicelsius = bmp085.decicelsius;
         payload.bmp085_pNN = pNN;
         payload.sht11_milicelsius = sht11.temp;
         payload.sht11_rh_true = sht11.rh_true;
@@ -244,8 +244,8 @@ main(void)
     dbgled_green_init();
 
     twi_init();
-    bmp085_init(&bmp085);
-    bmp085_read_calibration_coefficients(&bmp085);
+    bmp085_init(&bmp085_coeff);
+    bmp085_read_calibration_coefficients(&bmp085_coeff);
 
     // Use timer/counter2 in async mode to wakeup from power save.
     // An external resonator with 32.768 kHz is required on TOSC1/TOSC2.
