@@ -52,11 +52,9 @@ static inline void disable_analog_comparator(void)
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
-    if (wlhl_is_busy()) {
-        return 0;
-    }
-
-    return 1;
+    // nRF24L01+ may be busy during transmission, so don't power down
+    // unconditionally.
+    return !wlhl_is_busy();
 }
 
 // Power down all subsystems.
@@ -71,7 +69,7 @@ static void subsystems_power_down(void)
     // regardless of any ongoing operation.
     TWCR &= ~(1 << TWEN);
 
-    // Power-down nRF24L01+
+    // nRF24L01+
     wlhl_power_down();
 }
 
@@ -85,7 +83,7 @@ static void subsystems_power_up(void)
     TWCR &= ~((1 << TWSTO) | (1 << TWEN));
     TWCR |= (1 << TWEN);
 
-    // Power-down nRF24L01+
+    // nRF24L01+ powering up takes some ms!
     wlhl_power_up();
 }
 
