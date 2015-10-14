@@ -50,8 +50,9 @@ FORMAT = ihex
 TARGET = main
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c uart.c uart_addons.c bmp085.c    \
-	sht11.c twim.c                             \
+SRC = $(TARGET).c uart.c uart_addons.c dbgled.c \
+	bmp085.c \
+	sht11.c twim.c \
 	spi.c wl_module.c wl_util.c wl_highlevel.c
 
 # List Assembler source files here.

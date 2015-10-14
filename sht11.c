@@ -338,6 +338,41 @@ uint16_t sht11_humid_convert_alt_compensated(uint16_t const converted_temp, uint
 #endif
 
 
+// All in one conversion according to Sensirion sample code
+
+#ifdef SHT11_CONVERT_SENSIRION_ALL_IN_ONE_FLOATS
+
+void sth11_convert_sensirion_all_in_one(float *p_humidity, float *p_temperature)
+{
+    const float C1 = -2.0468;       // for 12 Bit RH
+    const float C2 = +0.0367;       // for 12 Bit RH
+    const float C3 = -0.0000015955; // for 12 Bit RH
+    const float T1 = +0.01;         // for 12 Bit RH
+    const float T2 = +0.00008;      // for 12 Bit RH
+
+    const float d1 = SHT11_VOLTAGE_COMPENSATION_D1;
+    const float d2 = +0.01;   // for 14 Bit temperature
+
+    float rh = *p_humidity;   // rh:      Humidity [Ticks] 12 Bit
+    float t = *p_temperature; // t:       Temperature [Ticks] 14 Bit
+    float rh_lin;             // rh_lin:  Humidity linear
+    float rh_true;            // rh_true: Temperature compensated humidity
+    float t_C;                // t_C:     Temperature [°C]
+
+    t_C = t * d2 + d1;                    // calc. temperature[°C]from 14 bit temp.ticks
+    rh_lin = C3*rh*rh + C2*rh + C1;       // calc. humidity from ticks to [%RH]
+    rh_true = (t_C-25)*(T1+T2*rh)+rh_lin; // calc. temperature compensated humidity [%RH]
+
+    if (rh_true > 100) rh_true = 100; // cut if the value is outside of
+    if (rh_true < 0.1) rh_true = 0.1; // the physical possible range
+
+    *p_temperature = t_C;
+    *p_humidity = rh_true;
+}
+
+#endif
+
+
 // Initialize
 
 void sht11_init(void)
@@ -421,6 +456,12 @@ uint8_t sht11_read(sht11_t *sht11)
 #elif defined(SHT11_CONVERT_ALT_COMPENSATED)
     sht11->temp = sht11_temp_convert_alt_compensated(temp);
     sht11->rh_true = sht11_humid_convert_alt_compensated(temp, humid);
+#elif defined(SHT11_CONVERT_SENSIRION_ALL_IN_ONE_FLOATS)
+    float cels = temp;
+    float humi = humid;
+    sth11_convert_sensirion_all_in_one(&humi, &cels);
+    sht11->temp = cels * 100.f;
+    sht11->rh_true = humi * 100.f;
 #endif
 
 #ifdef SHT11_WITH_RAW_SENSOR_VALUES

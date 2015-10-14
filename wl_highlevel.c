@@ -4,6 +4,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
+#include "dbgled.h"
+
 #include "spi.h"
 
 #include "wl_module.h"
@@ -98,8 +100,6 @@ uint8_t wlhl_get_channel(void)
 {
     return wl_module_get_rf_ch();
 }
-
-void dbgled_green_toggle(void); // TODO remove
 
 ISR(WIRELESS_INTERRUPT_VECT)
 {

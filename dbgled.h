@@ -1,0 +1,42 @@
+#ifndef DBGLED_H
+#define DBGLED_H
+
+#ifndef WITHOUT_DBGLED_RED
+void dbgled_red_init(void);
+void dbgled_red_on(void);
+void dbgled_red_off(void);
+void dbgled_red_toggle(void);
+void dbgled_red_pulse(uint8_t p);
+# ifndef WITHOUT_DBGLED_RED_TOGGLE
+void dbgled_red_toggle(void)
+# else
+#define dbgled_red_toggle()
+# endif
+#else
+# define dbgled_red_init()
+# define dbgled_red_on()
+# define dbgled_red_off()
+# define dbgled_red_pulse(p) (void) p
+# define dbgled_red_toggle()
+#endif // WITHOUT_DBGLED_RED
+
+#ifndef WITHOUT_DBGLED_GREEN
+void dbgled_green_init(void);
+void dbgled_green_on(void);
+void dbgled_green_off(void);
+void dbgled_green_toggle(void);
+void dbgled_green_pulse(uint8_t p);
+# if defined(WITH_DBGLED_GREEN_TOGGLE)
+void dbgled_green_toggle(void)
+# else
+#define dbgled_green_toggle()
+# endif
+#else
+# define dbgled_green_init()
+# define dbgled_green_on()
+# define dbgled_green_off()
+# define dbgled_green_pulse(p) (void) p
+# define dbgled_green_toggle()
+#endif // WITHOUT_DBGLED_GREEN
+
+#endif // DBGLED_H

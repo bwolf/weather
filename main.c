@@ -7,8 +7,12 @@
 
 #include <util/delay.h>
 
+#include <stdlib.h>
+
 #include "uart.h"
 #include "uart_addons.h"
+
+#include "dbgled.h"
 
 #include "twim.h"
 #include "bmp085.h"
@@ -43,73 +47,6 @@ static inline void disable_analog_comparator(void)
 # error "Unsupported MCU"
 #endif
 }
-
-
-#ifndef WITHOUT_DBGLED
-static volatile uint8_t dbgled_red = 0;
-static volatile uint8_t dbgled_green = 0;
-
-#define dbgled_red_init() DDRB |= (1 << DDB0)
-#define dbgled_red_on()   dbgled_red = 1; PORTB |= (1 << PB0)
-#define dbgled_red_off()  dbgled_red = 0; PORTB &= ~(1 << PB0)
-
-#define dbgled_green_init() DDRB |= (1 << DDB1)
-#define dbgled_green_on()   dbgled_green = 1; PORTB |= (1 << PB1)
-#define dbgled_green_off()  dbgled_green = 0; PORTB &= ~(1 << PB1)
-
-// static void dbgled_red_toggle(void)
-// {
-//     if (dbgled_red) {
-//         dbgled_red_off();
-//         dbgled_red = 0;
-//     } else {
-//         dbgled_red_on();
-//         dbgled_red = 1;
-//     }
-// }
-
-void dbgled_green_toggle(void)
-{
-    if (dbgled_green) {
-        dbgled_green_off();
-        dbgled_green = 0;
-    } else {
-        dbgled_green_on();
-        dbgled_green = 1;
-    }
-}
-
-// static void dbgled_red_pulse(uint8_t p)
-// {
-//     uint8_t n;
-
-//     for (n = 0; n < p; n++) {
-//         dbgled_red_on();
-//         _delay_ms(50);
-//         dbgled_red_off();
-//         _delay_ms(50);
-//     }
-// }
-
-// static void dbgled_green_pulse(uint8_t p)
-// {
-//     uint8_t n;
-
-//     for (n = 0; n < p; n++) {
-//         dbgled_green_on();
-//         _delay_ms(50);
-//         dbgled_green_off();
-//         _delay_ms(50);
-//     }
-// }
-
-#else
-# warning "Building without red debug LED, you won't see any blinking!"
-# define dbgled_red_init()
-# define dbgled_red_on()
-# define dbgled_red_off()
-# define dbgled_red_pulse(p) (void) p
-#endif
 
 
 // Predicate to check if power down is possible by checking subsystems.
@@ -180,17 +117,12 @@ static void dowork(void)
 
     dbgled_red_on(); // LED enable
 
-    // TODO rename all wireless_functions to e.g. wl_hl_
-    // wl_hlbusy_p()
-    // wl_hlpowerup()
-    // wl_hlpowerdown()
-    // wl_hltransmit()
-    // wl_hlinit()
     if (wlhl_is_busy()) {
         // Do nothing, give wireless module time to finish
         uart_putsln_P("wireless_is_busy");
         wlhl_debug_print_status();
     } else {
+        // -- BMP086 / Pressure
         bmp085_read(&payload.bmp085, &bmp085_coeff);
 
         uint32_t pNN = bmp085_calculate_pressure_nn(payload.bmp085.pressure, ALTITUDE_SENSOR_LOCATION);
@@ -198,6 +130,7 @@ static void dowork(void)
         uart_puti16(payload.bmp085.decicelsius); uart_space();
         uart_putu32(pNN);                        uart_space();
 
+        // -- SHT11 / Humidity
         sht11_init();
         if (sht11_read(&payload.sht11)) {
             uart_puts_P("sht11 error"); // Debug output
@@ -210,9 +143,6 @@ static void dowork(void)
         uart_crlf(); // Debug output
 
         // Transmit measurements
-        uart_puts_P("Transsmit ");
-        uart_putu8(sizeof(payload));
-        uart_crlf();
         wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
     }
 
@@ -220,6 +150,7 @@ static void dowork(void)
 }
 
 
+// Do work after 10 seconds
 #define TIMER2_TICKS_UNTIL_WORK 10
 
 static volatile uint8_t dowork_flag;
@@ -262,13 +193,6 @@ main(void)
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down
 #endif
-
-    // Debug only
-    _delay_ms(500);
-    uart_putc(wlhl_get_channel() + '0');
-    uart_putsln_P(" ch");
-
-    // static uint8_t count = 0;
 
     while (1) {
         // Give outstanding operations time to complete (e.g. UART)
@@ -321,7 +245,7 @@ ISR(TIMER2_OVF_vect)
         ticks = 0;
         dowork_flag = 1; // Flag main loop to do measurement
     }
-    dbgled_red_off(); // TODO remove
+    dbgled_red_off();
 }
 
 // EOF

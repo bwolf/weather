@@ -192,10 +192,10 @@ extern void uart1_puts_p(const char *s );
 /**@}*/
 
 #else // WITHOUT_UART
-# define uart_init(bd) (void) bd
-# define uart_putc(c) (void) c
-# define uart_puts(s) (void) s
-# define uart_puts_P(s) (void) s
+# define uart_init(bd)  ((void) bd)
+# define uart_putc(c)   ((void) c)
+# define uart_puts(s)   ((void) s)
+# define uart_puts_P(s) ((void) s)
 #endif // WITHOUT_UART
 
 #endif // UART_H

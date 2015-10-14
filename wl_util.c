@@ -13,6 +13,9 @@
 
 #include "wl_util.h"
 
+
+#ifndef WITHOUT_UART
+
 void wl_util_print_config_register(void)
 {
     int8_t i;
@@ -45,5 +48,7 @@ uint8_t wl_util_print_status_register(void)
 
     return r;
 }
+
+#endif // WITHOUT_UART
 
 /* EOF */

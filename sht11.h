@@ -53,6 +53,8 @@ int16_t sht11_humid_convert_simple(int16_t raw_humid);
 #elif defined(SHT11_CONVERT_ALT_COMPENSATED)
 int16_t sht11_temp_convert_alt_compensated(uint16_t raw_temp);
 uint16_t sht11_humid_convert_alt_compensated(uint16_t const raw_temp, uint16_t const raw_humid);
+#elif defined(SHT11_CONVERT_SENSIRION_ALL_IN_ONE_FLOATS)
+void sth11_convert_sensirion_all_in_one(float *p_humidity, float *p_temperature);
 #endif
 
 // Predicate to check if the sht11 sensor is ready
