@@ -107,9 +107,9 @@ static void dowork(void)
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085     SHT11");
-        uart_putsln_P("dC  P (NN) hC   hH%");
-        //             231 102464 2333 5036 -- For alignment of the header
+        uart_putsln_P("BMP085    SHT11");
+        uart_putsln_P("dC  P/NN  hC   hH%");
+        //             231 10246 2333 5036 -- For alignment of the header
     }
 
     dbgled_red_on(); // LED enable

@@ -44,7 +44,7 @@
 // Altitude at sensor location
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
-#define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN
+#define ALTITUDE_SENSOR_LOCATION ALTITUDE_MUNICH
 
 // BMP085
 #include "bmp085_config.h"
