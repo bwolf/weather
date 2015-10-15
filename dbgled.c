@@ -29,6 +29,8 @@ static volatile uint8_t dbgled_red = 0;
 # warning "Missing definition"
 #endif
 
+
+#ifndef WITHOUT_DBGLED_RED
 void dbgled_red_init(void)
 {
     DBGLED_RED_DDR |= (1 << DBGLED_RED_DDR_PIN);
@@ -75,6 +77,8 @@ void dbgled_red_pulse(uint8_t p)
     }
 }
 
+#endif
+
 
 #ifndef WITHOUT_DBGLED_GREEN
 # ifndef WITHOUT_DBGLED_GREEN_TOGGLE
@@ -98,6 +102,9 @@ static volatile uint8_t dbgled_green = 0;
 #ifndef DBGLED_GREEN_PORT_PIN
 # warning "Missing definition"
 #endif
+
+
+#ifndef WITHOUT_DBGLED_GREEN
 
 void dbgled_green_init(void)
 {
@@ -144,5 +151,7 @@ void dbgled_green_pulse(uint8_t p)
         _delay_ms(50);
     }
 }
+
+#endif
 
 // EOF

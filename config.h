@@ -14,7 +14,7 @@
 #undef  WITHOUT_DBGLED_GREEN_TOGGLE
 #undef  WITHOUT_POWERDOWN
 
-// Features inverse
+// Provide inverse features macros (for some features)
 #ifndef WITHOUT_UART
 # define WITH_UART
 #endif
@@ -27,15 +27,15 @@
 #define UART_BAUD_RATE 4800
 
 // Red debug LED
-#define DBGLED_RED_DDR DDRB
-#define DBGLED_RED_DDR_PIN DDB0
-#define DBGLED_RED_PORT PORTB
+#define DBGLED_RED_DDR      DDRB
+#define DBGLED_RED_DDR_PIN  DDB0
+#define DBGLED_RED_PORT     PORTB
 #define DBGLED_RED_PORT_PIN PB0
 
 // Green debug LED
-#define DBGLED_GREEN_DDR DDRB
-#define DBGLED_GREEN_DDR_PIN DDB1
-#define DBGLED_GREEN_PORT PORTB
+#define DBGLED_GREEN_DDR      DDRB
+#define DBGLED_GREEN_DDR_PIN  DDB1
+#define DBGLED_GREEN_PORT     PORTB
 #define DBGLED_GREEN_PORT_PIN PB1
 
 // SCL clock in Hz for TWI/I2C
@@ -44,14 +44,15 @@
 // Altitude at sensor location
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
+
 #define ALTITUDE_SENSOR_LOCATION ALTITUDE_MUNICH
 
 // BMP085
 #include "bmp085_config.h"
 #define BMP085_OVERSAMPLING_VALUE BMP085_OVERSAMPLING_STANDARD
+#define BMP085_ALTITUDE_SENSOR ALTITUDE_SENSOR_LOCATION
 #undef  WITHOUT_BMP085_CALC_PRESSURE_NN
 #undef  BMP085_WITH_UART_ERROR_MSGS
-#define BMP085_ALTITUDE_SENSOR ALTITUDE_SENSOR_LOCATION
 
 // SHT11 configuration
 #include "sht11_config.h"
