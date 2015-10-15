@@ -88,18 +88,17 @@ static void subsystems_power_up(void)
 }
 
 
-static bmp085_coeff_t bmp085_coeff;
 
-typedef struct payload { // TODO move somewhere e.g. config.h to get compile time constant of payload size
+// BMP085 data cannot be transmitted directly because it needs to be transformed!
+static bmp085_coeff_t bmp085_coeff; // Only needed for calculation
+
+// TODO move somewhere e.g. config.h to get compile time constant of payload size
+typedef struct payload {
     bmp085_t bmp085;
     sht11_t sht11;
 } payload_t;
 
 static payload_t payload;
-
-#define ALTITUDE_MUNICH      519
-#define ALTITUDE_HOLZKIRCHEN 691
-#define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN // TODO maybe better in EEPROM
 
 static void dowork(void)
 {
@@ -122,11 +121,9 @@ static void dowork(void)
     } else {
         // -- BMP086 / Pressure
         bmp085_read(&payload.bmp085, &bmp085_coeff);
-
-        uint32_t pNN = bmp085_calculate_pressure_nn(payload.bmp085.pressure, ALTITUDE_SENSOR_LOCATION);
         // Debug output
         uart_puti16(payload.bmp085.decicelsius); uart_space();
-        uart_putu32(pNN);                        uart_space();
+        uart_putu16(payload.bmp085.pressure_nn); uart_space();
 
         // -- SHT11 / Humidity
         sht11_init();
@@ -138,6 +135,7 @@ static void dowork(void)
             uart_puti16(payload.sht11.rh_true);
         }
         sht11_down();
+
         uart_crlf(); // Debug output
 
         // Transmit measurements

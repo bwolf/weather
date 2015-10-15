@@ -3,17 +3,7 @@
 #ifndef BMP085_H
 #define BMP085_H
 
-// Define this to get error messages via uart
-#undef BMP085_WITH_UART_ERROR_MSGS
-
-// Wait 4.5ms
-#define BMP085_OVERSAMPLING_ULTRA_LOW_POWER       0
-// Wait 7.5ms
-#define BMP085_OVERSAMPLING_STANDARD              1
-// Wait 13.5ms
-#define BMP085_OVERSAMPLING_HIGH_RESOLUTION       2
-// Wait 25.5ms
-#define BMP085_OVERSAMPLING_ULTRA_HIGH_RESOLUTION 3
+// Define this in config.h to get error messages via uart #define BMP085_WITH_UART_ERROR_MSGS
 
 typedef struct bmp085_coeff {
     // Calibration coefficients from BMP085 eeprom
@@ -34,16 +24,18 @@ void bmp085_init(bmp085_coeff_t *b085);
 void bmp085_read_calibration_coefficients(bmp085_coeff_t *b085);
 
 uint16_t bmp085_read_ut(void);
-uint32_t bmp085_read_up(uint8_t oss);
+uint32_t bmp085_read_up(void);
 
 int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coeff_t * const b085);
-int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085, uint8_t oss);
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085);
 float bmp085_calculate_altitude(int32_t p);
-uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude);
+
+uint32_t bmp085_calculate_pressure_nn(int32_t p);
+uint16_t bmp085_calculate_pressure_nn16(int32_t p);
 
 typedef struct bmp085 {
-    int16_t decicelsius; // Temperature in deci degrees C
-    int32_t pressure;    // True pressure
+    int16_t decicelsius;  // Temperature in deci degrees C
+    uint16_t pressure_nn; // True pressure at altitude NN
 } bmp085_t;
 
 // All in one functionality

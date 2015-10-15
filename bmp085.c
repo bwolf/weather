@@ -27,6 +27,15 @@
 #include "bmp085.h"
 
 
+#ifndef BMP085_ALTITUDE_SENSOR
+# error "Missing definition BMP085_ALTITUDE_SENSOR."
+#endif
+
+#ifndef BMP085_OVERSAMPLING_VALUE
+# error "Missing definition BMP085_OVERSAMPLING_VALUE."
+#endif
+
+
 // Define this in config.h to get error messages via uart
 // #define BMP085_WITH_UART_ERROR_MSGS
 
@@ -156,18 +165,18 @@ error:
 // Read uncompensated pressure value.
 // Param: oss - oversampling setting of BMP085
 // Example value 39680
-uint32_t bmp085_read_up(uint8_t oss)
+uint32_t bmp085_read_up(void)
 {
     uint8_t msb, lsb, xlsb;
     int8_t delayms;
 
     if (twi_start(BMP085_ADDRESS + TWI_WRITE)) goto error;
     if (twi_write(0xF4)) goto error;
-    if (twi_write(0x34 + (oss << 6))) goto error;
+    if (twi_write(0x34 + (BMP085_OVERSAMPLING_VALUE << 6))) goto error;
     twi_stop();
 
     // Delay according to chosen oversampling setting
-    delayms = 2 + (3 << oss);
+    delayms = 2 + (3 << BMP085_OVERSAMPLING_VALUE);
     do {
         _delay_us(1000);
     } while (--delayms > 0);
@@ -184,7 +193,7 @@ uint32_t bmp085_read_up(uint8_t oss)
     // uart_puts_P("up xlsb "); uart_putu8(xlsb); uart_crlf();
     twi_stop();
 
-    return (((uint32_t) msb << 16) | ((uint32_t) lsb << 8) | (uint32_t) xlsb) >> (8 - oss);
+    return (((uint32_t) msb << 16) | ((uint32_t) lsb << 8) | (uint32_t) xlsb) >> (8 - BMP085_OVERSAMPLING_VALUE);
 
 error:
 #ifdef BMP085_WITH_UART_ERROR_MSGS
@@ -211,7 +220,7 @@ int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coef
 // Param: up - uncompensated pressure from BMP085
 // Param: b085 - BMP085 structure with calibration coefficients
 // Return: pressure in pascal (P)
-int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085, uint8_t oss)
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085)
 {
     int32_t x1, x2, x3, b3, b6, p;
     uint32_t b4, b7;
@@ -222,7 +231,7 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, co
     x1 = (_B2 * (b6 * b6) >> 12) >> 11;
     x2 = (_AC2 * b6) >> 11;
     x3 = x1 + x2;
-    b3 = (((((int32_t) _AC1) * 4 + x3) << oss) + 2) >> 2;
+    b3 = (((((int32_t) _AC1) * 4 + x3) << BMP085_OVERSAMPLING_VALUE) + 2) >> 2;
 
     // Calculate B4
     x1 = (_AC3 * b6) >> 13;
@@ -230,7 +239,7 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, co
     x3 = ((x1 + x2) + 2) >> 2;
     b4 = (_AC4 * (uint32_t) (x3 + 32768)) >> 15;
 
-    b7 = ((uint32_t) (up - b3) * (50000 >> oss));
+    b7 = ((uint32_t) (up - b3) * (50000 >> BMP085_OVERSAMPLING_VALUE));
     if (b7 < 0x80000000) {
         p = (b7 << 1) / b4;
     } else {
@@ -252,10 +261,17 @@ float bmp085_calculate_altitude(int32_t p)
 }
 
 // NN is normal null
-uint32_t bmp085_calculate_pressure_nn(int32_t p, uint16_t altitude)
+uint32_t bmp085_calculate_pressure_nn(int32_t p)
 {
     // Calculation according to Bosch data sheet
-    return (uint32_t) (((float) p) / pow((float)1 - ((float)altitude / (float) 44330), (float) 5.255));
+    return (uint32_t) (((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255));
+}
+
+// NN is normal null, truncate a value like 102464 meaning 1024,64 to 10246 fitting into an uint16_t.
+uint16_t bmp085_calculate_pressure_nn16(int32_t p)
+{
+    // Calculation according to Bosch data sheet, value/10 rounded
+    return (uint16_t) roundf((((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255)) / 10.f);
 }
 
 void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
@@ -264,7 +280,7 @@ void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
     uint16_t ut = bmp085_read_ut();
 
     // Read uncompensated pressure value
-    uint32_t up = bmp085_read_up(BMP085_OSS_VALUE);
+    uint32_t up = bmp085_read_up();
 
     // Calculate temperature in deci degress C
     int32_t B5;
@@ -272,8 +288,11 @@ void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
     res->decicelsius = decicelsius;
 
     // Calculate true pressure
-    int32_t p = bmp085_calculate_true_pressure(up, &B5, bmp085, BMP085_OSS_VALUE);
-    res->pressure = p;
+    int32_t p = bmp085_calculate_true_pressure(up, &B5, bmp085);
+
+    // Calculate pressure NN
+    // res->pressure_nn = bmp085_calculate_pressure_nn(p);
+    res->pressure_nn = bmp085_calculate_pressure_nn16(p);
 }
 
 // EOF
