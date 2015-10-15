@@ -9,10 +9,10 @@ void dbgled_red_toggle(void);
 void dbgled_red_pulse(uint8_t p);
 # ifndef WITHOUT_DBGLED_RED_TOGGLE
 void dbgled_red_toggle(void)
-# else
-#define dbgled_red_toggle()
-# endif
-#else
+# else // WITHOUT_DBGLED_RED_TOGGLE
+#  define dbgled_red_toggle();
+# endif // WITHOUT_DBGLED_RED_TOGGLE
+#else // WITHOUT_DBGLED_RED
 # define dbgled_red_init()
 # define dbgled_red_on()
 # define dbgled_red_off()
@@ -26,12 +26,12 @@ void dbgled_green_on(void);
 void dbgled_green_off(void);
 void dbgled_green_toggle(void);
 void dbgled_green_pulse(uint8_t p);
-# if defined(WITH_DBGLED_GREEN_TOGGLE)
-void dbgled_green_toggle(void)
-# else
-#define dbgled_green_toggle()
-# endif
-#else
+# ifndef WITHOUT_DBGLED_GREEN_TOGGLE
+void dbgled_green_toggle(void);
+# else // WITHOUT_DBGLED_GREEN_TOGGLE
+#  define dbgled_green_toggle()
+# endif // WITHOUT_DBGLED_GREEN_TOGGLE
+#else  // WITHOUT_DBGLED_GREEN
 # define dbgled_green_init()
 # define dbgled_green_on()
 # define dbgled_green_off()

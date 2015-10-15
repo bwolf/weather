@@ -89,19 +89,19 @@ static void subsystems_power_up(void)
 
 
 
-// BMP085 data cannot be transmitted directly because it needs to be transformed!
-static bmp085_coeff_t bmp085_coeff; // Only needed for calculation
+static bmp085_coeff_t bmp085_coeff; // BMP085 EEPROM coefficients for calculation
 
-// TODO move somewhere e.g. config.h to get compile time constant of payload size
-typedef struct payload {
+typedef struct payload { // TODO move somewhere e.g. config.h to get compile time constant of payload size
     bmp085_t bmp085;
     sht11_t sht11;
 } payload_t;
 
+// Global variable containing sensor read out to be transmitted wireless
 static payload_t payload;
 
 static void dowork(void)
 {
+#ifdef WITH_UART
     static uint8_t once = 1;
 
     // Debug output
@@ -111,6 +111,7 @@ static void dowork(void)
         uart_putsln_P("dC  P/NN  hC   hH%");
         //             231 10246 2333 5036 -- For alignment of the header
     }
+#endif
 
     dbgled_red_on(); // LED enable
 
@@ -139,6 +140,7 @@ static void dowork(void)
         uart_crlf(); // Debug output
 
         // Transmit measurements
+        dbgled_green_toggle();
         wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
     }
 

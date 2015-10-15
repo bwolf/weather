@@ -50,7 +50,7 @@ void dbgled_red_off(void)
     DBGLED_RED_PORT &= ~(1 << DBGLED_RED_PORT_PIN);
 }
 
-#if defined(WITH_DBGLED_RED_TOGGLE)
+#ifndef WITHOUT_DBGLED_RED_TOGGLE
 
 void dbgled_red_toggle(void)
 {
@@ -120,7 +120,7 @@ void dbgled_green_off(void)
     DBGLED_GREEN_PORT &= ~(1 << DBGLED_GREEN_PORT_PIN);
 }
 
-#if defined(WITH_DBGLED_GREEN_TOGGLE)
+#ifndef WITHOUT_DBGLED_GREEN_TOGGLE
 
 void dbgled_green_toggle(void)
 {
