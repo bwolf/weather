@@ -71,6 +71,18 @@
 #define SHT11_PIN     PINC
 #define SHT11_PIN_SDA PINC1
 
+// Rain sensor configuration
+#define RAIN_DDR     DDRD
+#define RAIN_DDR_NO  DDD3
+#define RAIN_PORT    PORTD
+#define RAIN_PORT_NO PORTD3
+// Set external interrupt on falling edge for INT1
+#define RAIN_INTERRUPT_FALLING_EDGE() (MCUCR = (1 << ISC11))
+// Activate external interrupt INT1
+#define RAIN_INTERRUPT_ENABLE() (GICR = (1 << INT1))
+// Name of the interrupt vector
+#define RAIN_INTERRUPT_VECT INT1_vect
+
 // SPI configuration
 #define SPI_PORT    PORTB
 #define SPI_DDR     DDRB

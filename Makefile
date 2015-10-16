@@ -53,6 +53,7 @@ TARGET = main
 SRC = $(TARGET).c uart.c uart_addons.c dbgled.c \
 	bmp085.c \
 	sht11.c twim.c \
+	rain.c \
 	spi.c wl_module.c wl_util.c wl_highlevel.c
 
 # List Assembler source files here.
