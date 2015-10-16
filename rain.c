@@ -1,3 +1,33 @@
+/* rain.c -- Rain measurement with Davis rain unit.
+ *
+ * Internally the sensor contains a seesaw with a cup on each side.
+ * The sessaw goes down if the cup fills with water (equiv. 0.2mm)
+ * switching a reed relais. Thus one impulse of the seesaw equals
+ * 0.2mm of rainfall.
+ *
+ * Assumption
+ *
+ * Maximum rainfall per day 50 mm
+ * Maximum rainfall per hour 20 mm
+ *
+ * 50 / 0.2 = 250 cup fills per day, thus uint8_t as counter variable
+ * is enough to capture the rainfall of a whole day, granted that the
+ * cup fills are evenly distributed over the day.
+ *
+ * 20 / 0.2 = 100 cup fills at maximum per hour. 100/3600 = 1/36, I.e.
+ * one impulse each 36s, granted that the cup fills are evenly
+ * distributed. Proof: 3600/36 = 100.
+ *
+ * The reed relais needs to be de-bounced A timer resolution of
+ * anything smaller that 36s will do.
+ *
+ * Solution
+ *
+ * The reed relais triggers an external interrupt. The signal is
+ * de-bounced with a large interval timer.
+ *
+ */
+
 #include "config.h"
 
 #include <avr/io.h>
