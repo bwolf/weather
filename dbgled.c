@@ -14,19 +14,19 @@ static volatile uint8_t dbgled_red = 0;
 #endif
 
 #ifndef DBGLED_RED_DDR
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_RED_DDR_PIN
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_RED_PORT
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_RED_PORT_PIN
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 
@@ -88,19 +88,19 @@ static volatile uint8_t dbgled_green = 0;
 #endif
 
 #ifndef DBGLED_GREEN_DDR
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_GREEN_DDR_PIN
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_GREEN_PORT
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 #ifndef DBGLED_GREEN_PORT_PIN
-# warning "Missing definition"
+# error "Missing definition"
 #endif
 
 
