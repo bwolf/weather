@@ -15,12 +15,12 @@
  * is enough to capture the rainfall of a whole day, granted that the
  * cup fills are evenly distributed over the day.
  *
- * 20 / 0.2 = 100 cup fills at maximum per hour. 100/3600 = 1/36, I.e.
+ * 20 / 0.2 = 100 cup fills at maximum per hour. 100/3600 = 1/36, i.e.
  * one impulse each 36s, granted that the cup fills are evenly
  * distributed. Proof: 3600/36 = 100.
  *
- * The reed relais needs to be de-bounced A timer resolution of
- * anything smaller that 36s will do.
+ * The reed relais needs to be de-bounced. A timer resolution of a
+ * number smaller than 36s will do.
  *
  *
  * Solution
