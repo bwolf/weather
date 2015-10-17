@@ -17,7 +17,7 @@ void uart_putu8_kernel(uint8_t n, uint8_t base)
     uart_puts(buf);
 }
 
-void uart_putu8_b_kernel(uint8_t r)
+void uart_putu8_b(uint8_t r)
 {
     int8_t n;
 

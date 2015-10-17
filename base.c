@@ -14,7 +14,6 @@
 
 #include "nRF24l01.h"
 #include "wl_module.h"
-#include "wl_util.h"
 #include "spi.h"
 
 #define BMP085_DATA_TYPE_ONLY
@@ -75,9 +74,11 @@ main(void)
     wl_module_config();     // config nRF as RX Module, simple Version
     _delay_ms(10);
 
+    uart_putsln_P("Channel ");
     uart_putc(wl_module_get_rf_ch() + '0');
-    uart_putsln_P(" chan");
+    uart_crlf();
 
+    // Debugging of restart problems after ISP
     {
         uint8_t k;
 
@@ -93,20 +94,19 @@ main(void)
 
         uint8_t r = 0;
         wl_module_read_register(CONFIG, &r, 1);
-        uart_puts_P("CONFIG");
-        uart_space();
+        uart_puts_P("CONFIG ");
         uart_putu8_b(r);
+        uart_crlf();
 
         wl_module_CSN_lo;        //  Pull down chip select
         r = spi_fast_shift(NOP); // Read status register
         wl_module_CSN_hi;        // Pull up chip select
         uart_puts_P("STATUS ");
-        uart_space();
         uart_putu8_b(r);
+        uart_crlf();
     }
 
-    uart_putsln_P("Entering receive loop");
-
+    uart_putsln_P("Receive loop");
     while (1) {
         // Poll for RX_DR Flag in STATUS register
         // while (!wl_module_data_ready()) {

@@ -9,13 +9,7 @@ void uart_putu8_kernel(uint8_t n, uint8_t base);
 #define uart_putu8(n) uart_putu8_kernel(n, 10)
 #define uart_putu8_x(n) uart_putu8_kernel(n, 16)
 
-void uart_putu8_b_kernel(uint8_t r);
-
-#define uart_putu8_b(r)                         \
-    uart_puts(#r);                              \
-    uart_putc(' ');                             \
-    uart_putu8_b_kernel(r);                     \
-    uart_crlf()
+void uart_putu8_b(uint8_t r);
 
 void uart_putu16_kernel(uint16_t n, uint8_t base);
 #define uart_putu16(n) uart_putu16_kernel(n, 10)
@@ -39,6 +33,7 @@ void uart_crlf(void);
 #else // WITHOUT_UART
 # define uart_putu8(u) (void) u
 # define uart_putu8_x(u) (void) u
+# define uart_putu8_b(u) (void) u
 # define uart_putu16(u) (void) u
 # define uart_putu16_x(u) (void) u
 # define uart_puti16(i) (void) i
