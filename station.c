@@ -118,7 +118,6 @@ static void dowork(void)
     if (wlhl_is_busy()) {
         // Do nothing, give wireless module time to finish
         uart_putsln_P("wireless_is_busy");
-        wlhl_debug_print_status();
     } else {
         // -- BMP086 / Pressure
         bmp085_read(&payload.bmp085, &bmp085_coeff);
