@@ -47,7 +47,7 @@ F_OSC = 1000000
 FORMAT = ihex
 
 # Target file name (without extension).
-TARGET = main
+TARGET = station
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c uart.c uart_addons.c dbgled.c \

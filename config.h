@@ -48,14 +48,14 @@
 #define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN
 
 // BMP085 configuration (temperature/pressure)
-#include "bmp085_config.h"
+#include "bmp085_confdefs.h"
 #define BMP085_OVERSAMPLING_VALUE BMP085_OVERSAMPLING_STANDARD
 #define BMP085_ALTITUDE_SENSOR ALTITUDE_SENSOR_LOCATION
 #undef  WITHOUT_BMP085_CALC_PRESSURE_NN
 #undef  BMP085_WITH_UART_ERROR_MSGS
 
 // SHT11 configuration (temperature/humidity)
-#include "sht11_config.h"
+#include "sht11_confdefs.h"
 #undef  SHT11_CONVERT_SENSIRION
 #undef  SHT11_CONVERT_SIMPLE
 #undef  SHT11_CONVERT_ALT_COMPENSATED
