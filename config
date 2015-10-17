@@ -3,7 +3,7 @@
 ME=$(basename "$0")
 
 function usage {
-   echo "Usage: $ME station|base" >&2
+   echo "Usage: $ME station|base|clean" >&2
    exit 1
 }
 
@@ -15,16 +15,22 @@ case "$1" in
     station|s*)
         ln -sf Makefile_station Makefile
         ln -sf config_station.h config.h
+        ctags -Re -f TAGS *.[ch]
         ;;
     base|b*)
         ln -sf Makefile_base Makefile
         ln -sf config_base.h config.h
+        ctags -Re -f TAGS *.[ch]
+        ;;
+    clean|c*)
+        if [ -f Makefile ]; then
+            make clean
+        fi
+        rm -f Makefile config.h TAGS
         ;;
     *)
         usage
         ;;
 esac
-
-ctags -Re -f TAGS *.[ch]
 
 # EOF

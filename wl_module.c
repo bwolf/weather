@@ -465,7 +465,6 @@ uint8_t wl_module_get_one_byte(uint8_t command)
     wl_module_CSN_hi;
 
     return status;
-
 }
 
 // Reads wl_module_PAYLOAD bytes into data array

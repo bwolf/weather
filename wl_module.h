@@ -37,7 +37,7 @@ extern volatile uint8_t PTX;
 #define wl_module_PAYLOAD    16
 #define wl_module_RF_DR_HIGH 0 // 0 = 1Mbps, 1 = 2Mpbs
 #define wl_module_RF_SETUP   (RF_SETUP_RF_PWR_0 | RF_SETUP_RF_DR_250)
-#define wl_module_CONFIG     ( (1<<MASK_RX_DR) | (1<<EN_CRC) | (1<<CRCO) )
+#define wl_module_CONFIG     ((0 << MASK_RX_DR) | (1 << EN_CRC) | (1 << CRCO))
 #define wl_module_TX_NR_0    0
 #define wl_module_TX_NR_1    1
 #define wl_module_TX_NR_2    2
