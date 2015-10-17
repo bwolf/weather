@@ -76,6 +76,20 @@
 #define RAIN_DDR_NO  DDD3
 #define RAIN_PORT    PORTD
 #define RAIN_PORT_NO PORTD3
+// Disable timer (no clock source)
+#define RAIN_DEBOUNCE_TIMER_OFF() (TCCR0 &= ~((1 << CS02) | (1 << CS01) | (1 << CS00)))
+// Enable timer (reset counter value/set prescaler)
+#define RAIN_DEBOUNCE_TIMER_START()                     \
+    do {                                                \
+        /* Reset counter value */                       \
+        TCNT0 = 0;                                      \
+        /* Prescaler clk/1024 */                        \
+        TCCR0 |= ((1 << CS02) | (1 << CS00));           \
+    } while (0)
+// Timer overflow interrupt enable
+#define RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE() (TIMSK |= (1 << TOIE0))
+// Name of the timer overflow interrupt vector
+#define RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT TIMER0_OVF_vect
 // Set external interrupt on falling edge for INT1
 #define RAIN_INTERRUPT_FALLING_EDGE() (MCUCR = (1 << ISC11))
 // Activate external interrupt INT1

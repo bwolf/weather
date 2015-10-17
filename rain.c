@@ -5,6 +5,7 @@
  * switching a reed relais. Thus one impulse of the seesaw equals
  * 0.2mm of rainfall.
  *
+ *
  * Assumption
  *
  * Maximum rainfall per day 50 mm
@@ -21,10 +22,14 @@
  * The reed relais needs to be de-bounced A timer resolution of
  * anything smaller that 36s will do.
  *
+ *
  * Solution
  *
  * The reed relais triggers an external interrupt. The signal is
  * de-bounced with a large interval timer.
+ *
+ * To capture the interrupt count a uin16_t will be used and a timer
+ * interval of < 16s is used to de-bounce the signal.
  *
  */
 
@@ -32,6 +37,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
+#include "dbgled.h"
 
 
 #ifndef RAIN_DDR
@@ -50,6 +57,22 @@
 # error "Missing definition RAIN_PORT_NO."
 #endif
 
+#ifndef RAIN_DEBOUNCE_TIMER_OFF
+# error "Missing definition RAIN_DEBOUNCE_TIMER_OFF."
+#endif
+
+#ifndef RAIN_DEBOUNCE_TIMER_START
+# error "Missing definition RAIN_DEBOUNCE_TIMER_START."
+#endif
+
+#ifndef RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE
+# error "Missing definition RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE."
+#endif
+
+#ifndef RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT
+# error "Missing definition RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT."
+#endif
+
 #ifndef RAIN_INTERRUPT_FALLING_EDGE
 # error "Missing definition RAIN_INTERRUPT_FALLING_EDGE."
 #endif
@@ -63,36 +86,35 @@
 #endif
 
 
-#define RAINTIMER_VALUE_OFF 0
+#define RAINTIMER_VALUE_OFF   0
 #define RAINTIMER_VALUE_START 1
 
 // Delay value 500ms for timer interrupt
-#define RAINTIMER_VALUE_CUTOFF 30
+#define RAINTIMER_VALUE_CUTOFF 30 // TODO abstraction in config.h needed
 
 static volatile uint8_t raintimer = RAINTIMER_VALUE_OFF;
-static volatile uint8_t raincounter_deci_meters = 0;
+static volatile uint8_t count_cup_fills = 0;
 
-#define RAINTIMER_RUNNING_P() (raintimer > RAINTIMER_VALUE_OFF)
-#define RAINTIMER_START() raintimer = RAINTIMER_VALUE_START
-#define RAINTIMER_STOP() raintimer = RAINTIMER_VALUE_OFF
-#define RAINTIMER_INC_IF_ON() if (RAINTIMER_RUNNING_P()) { ++raintimer; }
+#define RAINTIMER_RUNNING_P()   (raintimer > RAINTIMER_VALUE_OFF)
+// TODO maybe really stop/start the timer to prevent powering up the MCU!
+// TODO use for stopping RAIN_TIMER_OFF()
+#define RAINTIMER_START()       raintimer = RAINTIMER_VALUE_START
+#define RAINTIMER_STOP()        raintimer = RAINTIMER_VALUE_OFF
+#define RAINTIMER_INC_IF_ON()   if (RAINTIMER_RUNNING_P()) { ++raintimer; }
 #define RAINTIMER_DEBOUNCED_P() (raintimer > RAINTIMER_VALUE_CUTOFF)
 
 
 
+// Note: interrupts must be enabled elsewhere
 void rain_init(void)
 {
-    // TODO missing timer setup
-    // Timer interrupt
-// #if defined(__AVR_ATmega32U4__)
-//     TCCR0B |= _BV(CS02) | _BV(CS00);
-//     TIMSK0 |= _BV(TOIE0);
-// #else
-//  #warning "Unknown uC"
-// #endif
+    // Configure a timer/counter to de-bounce the signal.
+    RAIN_DEBOUNCE_TIMER_OFF();
+    RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE();
+    RAIN_DEBOUNCE_TIMER_START(); // TODO
 
-    // TODO ensure that now pull-up/pull-down is required (short cicruit)
     // Configure input PIN for IRQ
+    // TODO ensure that now pull-up/pull-down is required (short cicruit)
     RAIN_DDR &= ~(1 << RAIN_DDR_NO);   // input
     RAIN_PORT &= ~(1 << RAIN_PORT_NO); // disable pull-up
 
@@ -101,27 +123,33 @@ void rain_init(void)
     RAIN_INTERRUPT_ENABLE();
 }
 
-void missing_code_from_rainsensor_main_c_while_loop(void)
+uint8_t rain_busy_p(void)
 {
-    // TODO missing
+    return RAINTIMER_RUNNING_P();
 }
 
-// TODO missing timer interrupt
-// #if defined(__AVR_ATmega32U4__)
-// ISR(TIMER0_OVF_vect)
-// #else
-// # warning "Unknown uC"
-// #endif
-// {
-//     RAINTIMER_INC_IF_ON();
-// }
+// Worker function to be called periodically
+void rain_periodic(void)
+{
+    if (RAINTIMER_RUNNING_P()) {
+        if (RAINTIMER_DEBOUNCED_P()) {
+            RAINTIMER_STOP();
+        }
+    }
+}
+
+ISR(RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT)
+{
+    RAINTIMER_INC_IF_ON();
+}
 
 ISR(RAIN_INTERRUPT_VECT)
 {
     if (!RAINTIMER_RUNNING_P()) {
         RAINTIMER_START();
-        ++raincounter_deci_meters;
-        PINC |= _BV(PINC6); // Toggle IRQ debug led
+        ++count_cup_fills;
+
+        dbgled_red_toggle(); // Debug LED
     }
 }
 
