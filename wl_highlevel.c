@@ -9,7 +9,6 @@
 #include "spi.h"
 
 #include "wl_module.h"
-#include "wl_util.h"
 #include "nRF24L01.h"
 
 #include "wl_highlevel.h"
@@ -25,27 +24,28 @@ void wlhl_init(void)
     uint8_t k;
 
     // -- Basic config
-    // Requires configured interrupt, initializes SPI
     wl_module_init();
     _delay_ms(50);
+
     // Configurate the interrupt
     WIRELESS_INTERRUPT_FALLING_EDGE();
     WIRELESS_INTERRUPT_ENABLE();
+
     // Configure SPI
     spi_init();
 
     // -- Config Module
     wl_module_tx_config(wl_module_TX_NR_0);
+
     // Wait for configuration to complete
     _delay_ms(10);
 
-    // -- Check MAX_RT
-    //wl_util_print_config_register();
-    //k = wl_util_print_status_register();
+    // -- Check MAX_RT and clear it if set
     // Read wl_module status
     wl_module_CSN_lo;        //  Pull down chip select
     k = spi_fast_shift(NOP); // Read status register
     wl_module_CSN_hi;        // Pull up chip select
+
     if (k & STATUS_MAX_RT) {
         // Clearing STATUS_MAX_RT
         wl_module_config_register(STATUS, (1 << MAX_RT));
@@ -62,12 +62,6 @@ void wlhl_init(void)
 uint8_t wlhl_is_busy(void)
 {
     return PTX;
-}
-
-void wlhl_debug_print_status(void)
-{
-    wl_util_print_config_register();
-    wl_util_print_status_register();
 }
 
 // Power up 24L01+ and delay according to spec 6.1.7ff
@@ -121,12 +115,12 @@ ISR(WIRELESS_INTERRUPT_VECT)
     //  IRQ: Package has not been sent, send again
     if (status & (1 << MAX_RT)) {
         wl_module_config_register(STATUS, (1 << MAX_RT)); //  Clear MAX_RT Bit
+        // To manually start retransmission (auto retransmission timed out)
         // wl_module_CE_hi;                               // Start transmission
         // _delay_us(10);
 
         wl_module_CE_lo;
         PTX = 0; // Abort transmission
-        // dbgled_pulse(3);
     }
 
     //  TX_FIFO FULL <-- this is not an IRQ
