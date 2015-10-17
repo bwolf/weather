@@ -7,7 +7,6 @@
 
 void    wlhl_init(void);
 uint8_t wlhl_is_busy(void);
-void    wlhl_debug_print_status(void);
 void    wlhl_power_up(void);
 void    wlhl_power_down(void);
 void    wlhl_send_payload(uint8_t* data, uint8_t len);

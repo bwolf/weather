@@ -58,9 +58,4 @@ void uart_puti32(int32_t n)
     uart_puts(buf);
 }
 
-void uart_crlf(void)
-{
-    uart_puts_P("\r\n");
-}
-
 #endif // WITHOUT_UART
