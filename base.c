@@ -17,51 +17,39 @@
 #include "wl_util.h"
 #include "spi.h"
 
-// TODO include instead of declaration here!
-typedef struct bmp085 {
-    int16_t decicelsius;  // Temperature in deci degrees C
-    uint16_t pressure_nn; // True pressure at altitude NN
-} bmp085_t;
+#define BMP085_DATA_TYPE_ONLY
+#include "bmp085.h"
+#define SHT11_DATA_TYPE_ONLY
+#include "sht11.h"
+#include "payload.h"
 
-typedef struct sht11 {
-    int16_t temp;
-    int16_t rh_true;
-#ifdef SHT11_WITH_RAW_SENSOR_VALUES
-    int16_t raw_temp;
-    int16_t raw_humi;
-#endif
-} sht11_t;
-
-static struct payload {
-    bmp085_t bmp085;
-    sht11_t sht11;
-} weather;
+static payload_t payload;
 
 static void get_payload_and_do_work(void)
 {
     static uint8_t once = 1;
-    uint8_t payload[wl_module_PAYLOAD];     // holds the payload
+    uint8_t raw_payload[wl_module_PAYLOAD];   // holds the payload
 
     // Debug output
     if (once) {
         once = !once;
         uart_putsln_P("BMP085     SHT11");
-        uart_putsln_P("dC  P (NN) hC   hH%");
-        //             231 102464 2333 5036 -- For alignment of the header
+        uart_putsln_P("dC  P (NN) hC  hH%");
+        //             231 10165 2333 5036    -- For alignment of the header
     }
 
-    (void) wl_module_get_data(payload);   // reads the incomming Data to Array payload
+    (void) wl_module_get_data(raw_payload);   // reads the incomming Data to Array payload
 
     uint8_t n;
-    uint8_t *p = (uint8_t *) &weather;
-    for (n = 0; n < sizeof(weather); n++) {
-        p[n] = payload[n];
+    uint8_t *p = (uint8_t *) &payload;
+    for (n = 0; n < sizeof(payload); n++) {
+        p[n] = raw_payload[n];
     }
 
-    uart_puti16(weather.bmp085.decicelsius); uart_space();
-    uart_putu16(weather.bmp085.pressure_nn); uart_space();
-    uart_puti16(weather.sht11.temp);         uart_space();
-    uart_puti16(weather.sht11.rh_true);
+    uart_puti16(payload.bmp085.decicelsius); uart_space();
+    uart_putu16(payload.bmp085.pressure_nn); uart_space();
+    uart_puti16(payload.sht11.temp);         uart_space();
+    uart_puti16(payload.sht11.rh_true);
     uart_crlf();
 }
 

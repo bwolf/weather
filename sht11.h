@@ -3,7 +3,6 @@
 #ifndef SHT11_H
 #define SHT11_H
 
-
 // High level interface
 
 typedef struct sht11 {
@@ -14,6 +13,8 @@ typedef struct sht11 {
     int16_t raw_humi;
 #endif
 } sht11_t;
+
+#ifndef SHT11_DATA_TYPE_ONLY
 
 #define SHT11_READ_ERROR_TEMP_START  1
 #define SHT11_READ_ERROR_HUMID_START 2
@@ -30,7 +31,6 @@ typedef struct sht11 {
 //
 uint8_t sht11_read(sht11_t *sht11);
 
-
 // Low level interface
 
 void sht11_init(void);
@@ -71,5 +71,7 @@ uint8_t sht11_ready(void);
 // If it is not valid, the sensor value may be compared to
 // SHT11_UNAVAIL or SHT11_CRC_FAIL.
 #define sht11_valid(v) ((v) > -32000)
+
+#endif // SHT11_DATA_TYPE_ONLY
 
 #endif // SHT11_H

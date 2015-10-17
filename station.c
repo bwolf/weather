@@ -20,6 +20,8 @@
 
 #include "wl_highlevel.h"
 
+#include "payload.h"
+
 
 #ifdef WITHOUT_POWERDOWN
 # warning "Compiling without power saving (powerdown)!"
@@ -30,6 +32,8 @@
 #endif
 
 
+
+// TODO externalize, useful in base too
 static inline void disable_ad_converter(void)
 {
 #ifdef __AVR_ATmega8__
@@ -39,6 +43,7 @@ static inline void disable_ad_converter(void)
 #endif
 }
 
+// TODO externalize, useful in base too
 static inline void disable_analog_comparator(void)
 {
 #ifdef __AVR_ATmega8__
@@ -90,11 +95,6 @@ static void subsystems_power_up(void)
 
 
 static bmp085_coeff_t bmp085_coeff; // BMP085 EEPROM coefficients for calculation
-
-typedef struct payload { // TODO move somewhere e.g. config.h to get compile time constant of payload size
-    bmp085_t bmp085;
-    sht11_t sht11;
-} payload_t;
 
 // Global variable containing sensor read out to be transmitted wireless
 static payload_t payload;

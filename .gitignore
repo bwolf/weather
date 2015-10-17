@@ -1,6 +1,8 @@
 /.dep/
 /cscope.out
 /TAGS
+/config.h
+/Makefile
 *.eep
 *.elf
 *.hex

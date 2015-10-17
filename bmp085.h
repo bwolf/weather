@@ -1,9 +1,19 @@
-// bmp085.h - Bosch BMP085 Sensor
+/* bmp085.h - Bosch BMP085 Sensor
+ *
+ * Commentary
+ *
+ * Define BMP085_WITH_UART_ERROR_MSGS in config.h to get error messages via uart.
+ */
 
 #ifndef BMP085_H
 #define BMP085_H
 
-// Define this in config.h to get error messages via uart #define BMP085_WITH_UART_ERROR_MSGS
+typedef struct bmp085 {
+    int16_t decicelsius;  // Temperature in deci degrees C
+    uint16_t pressure_nn; // True pressure at altitude NN
+} bmp085_t;
+
+#ifndef BMP085_DATA_TYPE_ONLY
 
 typedef struct bmp085_coeff {
     // Calibration coefficients from BMP085 eeprom
@@ -33,13 +43,9 @@ float bmp085_calculate_altitude(int32_t p);
 uint32_t bmp085_calculate_pressure_nn(int32_t p);
 uint16_t bmp085_calculate_pressure_nn16(int32_t p);
 
-typedef struct bmp085 {
-    int16_t decicelsius;  // Temperature in deci degrees C
-    uint16_t pressure_nn; // True pressure at altitude NN
-} bmp085_t;
-
 // All in one functionality
 void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085);
 
-// BMP085_H
-#endif
+#endif // BMP085_DATA_TYPE_ONLY
+
+#endif // BMP085_H

@@ -15,11 +15,15 @@ case "$1" in
     station|s*)
         ln -sf Makefile_station Makefile
         ln -sf config_station.h config.h
+        rm -f *.o *.elf *.lss *.lst *.map *.eep *.hex *.sym
+        rm -rf .dep
         ctags -Re -f TAGS *.[ch]
         ;;
     base|b*)
         ln -sf Makefile_base Makefile
         ln -sf config_base.h config.h
+        rm -f *.o *.elf *.lss *.lst *.map *.eep *.hex *.sym
+        rm -rf .dep
         ctags -Re -f TAGS *.[ch]
         ;;
     clean|c*)
