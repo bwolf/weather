@@ -1,0 +1,30 @@
+#!/bin/bash
+
+ME=$(basename "$0")
+
+function usage {
+   echo "Usage: $ME station|base" >&2
+   exit 1
+}
+
+if [[ $(dirname "$0") != . ]]; then
+    echo "Error: $ME must be called within the project root directory!" >&2
+fi
+
+case "$1" in
+    station|s*)
+        ln -sf Makefile_station Makefile
+        ln -sf config_station.h config.h
+        ;;
+    base|b*)
+        ln -sf Makefile_base Makefile
+        ln -sf config_base.h config.h
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+ctags -Re -f TAGS *.[ch]
+
+# EOF
