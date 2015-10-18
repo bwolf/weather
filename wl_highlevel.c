@@ -13,9 +13,10 @@
 
 #include "wl_highlevel.h"
 
-#if WIRELESS_MAX_PAYLOAD > wl_module_PAYLOAD
-# error "Inconsistent wireless vs. wl_module payload size!"
-#endif
+// TODO cleanup
+// #if WIRELESS_MAX_PAYLOAD > wl_module_PAYLOAD
+// # error "Inconsistent wireless vs. wl_module payload size!"
+// #endif
 
 // Initialize wireless module.
 // Requires interrupts to be enabled.
@@ -59,6 +60,7 @@ void wlhl_init(void)
     wl_module_CSN_hi;           // Pull up chip select
 }
 
+// TODO rename wlhl_busy_p
 uint8_t wlhl_is_busy(void)
 {
     return PTX;
@@ -76,23 +78,17 @@ void wlhl_power_down(void)
     wl_module_power_down();
 }
 
-void wlhl_send_payload(uint8_t *data, uint8_t len)
+// From datasheet p. 29: With static payload length all packets
+// between a transmitter and a receiver have the same length. Static
+// payload length is set by the RX_PW_Px registers on the receiver
+// side. The payload length on the transmitter side is set by the
+// number of bytes clocked into the TX_FIFO and must equal the value
+// in the RX_PW_Px register on the receiver side.
+void wlhl_send_payload(uint8_t *payload, uint8_t len)
 {
-    uint8_t payload[wl_module_PAYLOAD];
-    uint8_t k;
-
-    for (k = 0; k < len && k < wl_module_PAYLOAD; k++) {
-        payload[k] = data[k];
-    }
-
-    // Be sure to send the correct
-    // amount of bytes as configured as payload on the receiver.
-    wl_module_send(payload, wl_module_PAYLOAD);
-}
-
-uint8_t wlhl_get_channel(void)
-{
-    return wl_module_get_rf_ch();
+    // Be sure to send the correct amount of bytes as configured as
+    // payload on the receiver.
+    wl_module_send(payload, len);
 }
 
 ISR(WIRELESS_INTERRUPT_VECT)

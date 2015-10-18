@@ -12,6 +12,7 @@
 
 #include "dbgled.h"
 
+// Use wl_highlevel such that includes of nRF24l01 are not needed
 #include "nRF24l01.h"
 #include "wl_module.h"
 #include "spi.h"
@@ -22,12 +23,12 @@
 #include "sht11.h"
 #include "payload.h"
 
+
 static payload_t payload;
 
 static void get_payload_and_do_work(void)
 {
     static uint8_t once = 1;
-    uint8_t raw_payload[wl_module_PAYLOAD];   // holds the payload
 
     // Debug output
     if (once) {
@@ -37,13 +38,7 @@ static void get_payload_and_do_work(void)
         //             231 10165 2333 5036    -- For alignment of the header
     }
 
-    (void) wl_module_get_data(raw_payload);   // reads the incomming Data to Array payload
-
-    uint8_t n;
-    uint8_t *p = (uint8_t *) &payload;
-    for (n = 0; n < sizeof(payload); n++) {
-        p[n] = raw_payload[n];
-    }
+    (void) wl_module_get_data_n((uint8_t *) &payload, sizeof(payload));
 
     uart_puti16(payload.bmp085.decicelsius); uart_space();
     uart_putu16(payload.bmp085.pressure_nn); uart_space();
@@ -52,6 +47,7 @@ static void get_payload_and_do_work(void)
     uart_crlf();
 }
 
+
 static volatile uint8_t data_ready = 0;
 
 int __attribute__((OS_main))
@@ -61,6 +57,8 @@ main(void)
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
     dbgled_red_init();
 
+    _delay_ms(2000); // Delay startup to give host time to init uart
+
     uart_putsln_P("wl_module_init");
     wl_module_init();       // Init nRF Module
     _delay_ms(50);          // wait for Module
@@ -69,39 +67,90 @@ main(void)
     WIRELESS_INTERRUPT_ENABLE();
     spi_init();
 
-    sei();                  // activate Interrupts
+    sei(); // activate Interrupts
 
-    wl_module_config();     // config nRF as RX Module, simple Version
+    wl_module_config_n(sizeof(payload)); // config nRF as RX Module, with payload length
     _delay_ms(10);
 
-    uart_putsln_P("Channel ");
-    uart_putc(wl_module_get_rf_ch() + '0');
-    uart_crlf();
 
+    // TODO clean up this mess, integrate into wl_highlevel?
+    // ----------------------------------------------------------------------
     // Debugging of restart problems after ISP
     {
-        uint8_t k;
+        uint8_t r = 0, c = 0;
 
-        wl_module_CSN_lo;        //  Pull down chip select
-        k = spi_fast_shift(NOP); // Read status register
+        wl_module_read_register(CONFIG, &c, 1);
+        uart_puts_P("CONFIG      ");
+        uart_putu8_b(c);
+        uart_crlf();
+
+        wl_module_CSN_lo;        // Pull down chip select
+        r = spi_fast_shift(NOP); // Read status register
         wl_module_CSN_hi;        // Pull up chip select
-        if (k & STATUS_MAX_RT) {
-            // Clearing STATUS_MAX_RT
-            uart_putsln_P("clearing MAX_RT");
-            wl_module_config_register(STATUS, (1 << MAX_RT));
-        }
-
-
-        uint8_t r = 0;
-        wl_module_read_register(CONFIG, &r, 1);
-        uart_puts_P("CONFIG ");
+        uart_puts_P("STATUS      ");
         uart_putu8_b(r);
         uart_crlf();
 
-        wl_module_CSN_lo;        //  Pull down chip select
+        // Power down chip
+        c &= ~(1 << PWR_UP);
+        wl_module_write_register(CONFIG, &c, 1);
+        _delay_ms(5);
+
+        // Clear MAX_RT if asserted
+        if (r & (1 << MAX_RT)) {
+            uart_putsln_P("Clearing MAX_RT");
+            wl_module_config_register(STATUS, (1 << MAX_RT));
+        }
+
+        // Flush RX
+        if (r & (1 << RX_DR)) {
+            uart_putsln_P("Flushing RX");
+            wl_module_CSN_lo;         // Pull down chip select
+            spi_fast_shift(FLUSH_RX); // Write cmd to flush tx fifo
+            wl_module_CSN_hi;         // Pull up chip select
+            wl_module_config_register(STATUS, (1 << RX_DR));
+        }
+
+        // Flush TX
+        if (r & (1 << TX_DS) || r & (1 << TX_FULL)) {
+            uart_putsln_P("Flushing TX");
+            wl_module_CSN_lo;
+            spi_fast_shift(FLUSH_TX);
+            wl_module_CSN_hi;
+            wl_module_config_register(STATUS, (1 << TX_DS));
+        }
+
+        // Power up chip
+        c |= (1 << PWR_UP);
+        wl_module_write_register(CONFIG, &c, 1);
+        _delay_ms(5);
+
+        wl_module_read_register(CONFIG, &c, 1);
+        uart_puts_P("CONFIG      ");
+        uart_putu8_b(c);
+        uart_crlf();
+
+        wl_module_CSN_lo;        // Pull down chip select
         r = spi_fast_shift(NOP); // Read status register
         wl_module_CSN_hi;        // Pull up chip select
-        uart_puts_P("STATUS ");
+        uart_puts_P("STATUS      ");
+        uart_putu8_b(r);
+        uart_crlf();
+
+        wl_module_read_register(EN_RXADDR, &r, 1);
+        uart_puts_P("EN_RXADDR   ");
+        uart_putu8_b(r);
+        uart_crlf();
+
+        // Overwrite EN_RXADDR with default values
+        if (r != ((1 << ERX_P1) | (1 << ERX_P0))) {
+            uart_putsln_P("Resetting EN_RXADDR");
+            r = (1 << ERX_P1) | (1 << ERX_P0);
+            wl_module_write_register(EN_RXADDR, &r, 1);
+        }
+
+        wl_module_read_register(FIFO_STATUS, &r, 1);
+        uart_puts_P("FIFO_STATUS ");
         uart_putu8_b(r);
         uart_crlf();
     }

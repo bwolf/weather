@@ -1,28 +1,29 @@
 /*
-  Copyright (c) 2011 by Ernst Buchmann
-
-  Code based on the work of Stefan Engelke and Brennan Ball
-
-  Permission is hereby granted, free of charge, to any person
-  obtaining a copy of this software and associated documentation
-  files (the "Software"), to deal in the Software without
-  restriction, including without limitation the rights to use, copy,
-  modify, merge, publish, distribute, sublicense, and/or sell copies
-  of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-
-  The above copyright notice and this permission notice shall be
-  included in all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  DEALINGS IN THE SOFTWARE.
-*/
+ * Copyright (c) 2011 by Ernst Buchmann
+ * Copyright (c) 2015 by Marcus Geiger
+ *
+ * Code based on the work of Stefan Engelke and Brennan Ball
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
 
 #include "config.h"
 
@@ -94,14 +95,36 @@ void wl_module_init(void)
 
 // Sets the important registers in the wl-module and powers the module
 // in receiving mode.
-void wl_module_config()
+// void wl_module_config()
+// {
+//     // Set RF channel
+//     wl_module_config_register(RF_CH, wl_module_CH);
+//     // Set data speed & Output Power configured in wl_module.h
+//     wl_module_config_register(RF_SETUP, wl_module_RF_SETUP);
+//     // Set length of incoming payload
+//     wl_module_config_register(RX_PW_P0, wl_module_PAYLOAD);
+
+//     // Start receiver
+//     PTX = 0; // Start in receiving mode
+//     RX_POWERUP; // Power up in receiving mode
+//     wl_module_CE_hi; // Listening for pakets
+// }
+
+// Sets the important registers in the wl-module and powers the module
+// in receiving mode.
+//
+// Parameters
+//
+//  payload_len is up to 32 bytes, required to match the TX payload length.
+//
+void wl_module_config_n(uint8_t payload_len)
 {
     // Set RF channel
     wl_module_config_register(RF_CH, wl_module_CH);
     // Set data speed & Output Power configured in wl_module.h
     wl_module_config_register(RF_SETUP, wl_module_RF_SETUP);
     // Set length of incoming payload
-    wl_module_config_register(RX_PW_P0, wl_module_PAYLOAD);
+    wl_module_config_register(RX_PW_P0, payload_len);
 
     // Start receiver
     PTX = 0; // Start in receiving mode
@@ -111,47 +134,50 @@ void wl_module_config()
 
 // Sets the important registers in the wl-module and powers the module
 // in receiving mode.
-void wl_module_rx_config()
-{
-    uint8_t data[5];
-    // Set RF channel
-    wl_module_config_register(RF_CH,wl_module_CH);
-    // Set data speed & Output Power configured in wl_module.h
-    wl_module_config_register(RF_SETUP,wl_module_RF_SETUP);
-    //Enable all RX Data-Pipes
-    wl_module_config_register(EN_RXADDR, EN_RXADDR_ERX_ALL);
-    //Set RX_Address Pipe 0
-    data[0]= data[1]= data[2]= data[3]= data[4]= RX_ADDR_P0_B0_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 5, 0);
-    //Set RX_Address Pipe 1
-    data[0]= data[1]= data[2]= data[3]= data[4]= RX_ADDR_P1_B0_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 5, 1);
-    //Set RX_Address Pipe 2-5
-    data[0]=RX_ADDR_P2_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 1, 2);
-    data[0]=RX_ADDR_P3_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 1, 3);
-    data[0]=RX_ADDR_P4_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 1, 4);
-    data[0]=RX_ADDR_P5_DEFAULT_VAL;
-    wl_module_set_rx_addr(data, 1, 5);
-    // Set length of incoming payload
-    wl_module_config_register(RX_PW_P0, wl_module_PAYLOAD);
-    wl_module_config_register(RX_PW_P1, wl_module_PAYLOAD);
-    wl_module_config_register(RX_PW_P2, wl_module_PAYLOAD);
-    wl_module_config_register(RX_PW_P3, wl_module_PAYLOAD);
-    wl_module_config_register(RX_PW_P4, wl_module_PAYLOAD);
-    wl_module_config_register(RX_PW_P5, wl_module_PAYLOAD);
+// void wl_module_rx_config()
+// {
+//     uint8_t data[5];
+//     // Set RF channel
+//     wl_module_config_register(RF_CH,wl_module_CH);
+//     // Set data speed & Output Power configured in wl_module.h
+//     wl_module_config_register(RF_SETUP,wl_module_RF_SETUP);
+//     //Enable all RX Data-Pipes
+//     wl_module_config_register(EN_RXADDR, EN_RXADDR_ERX_ALL);
+//     //Set RX_Address Pipe 0
+//     data[0]= data[1]= data[2]= data[3]= data[4]= RX_ADDR_P0_B0_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 5, 0);
+//     //Set RX_Address Pipe 1
+//     data[0]= data[1]= data[2]= data[3]= data[4]= RX_ADDR_P1_B0_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 5, 1);
+//     //Set RX_Address Pipe 2-5
+//     data[0]=RX_ADDR_P2_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 1, 2);
+//     data[0]=RX_ADDR_P3_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 1, 3);
+//     data[0]=RX_ADDR_P4_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 1, 4);
+//     data[0]=RX_ADDR_P5_DEFAULT_VAL;
+//     wl_module_set_rx_addr(data, 1, 5);
+//     // Set length of incoming payload
+//     wl_module_config_register(RX_PW_P0, wl_module_PAYLOAD);
+//     wl_module_config_register(RX_PW_P1, wl_module_PAYLOAD);
+//     wl_module_config_register(RX_PW_P2, wl_module_PAYLOAD);
+//     wl_module_config_register(RX_PW_P3, wl_module_PAYLOAD);
+//     wl_module_config_register(RX_PW_P4, wl_module_PAYLOAD);
+//     wl_module_config_register(RX_PW_P5, wl_module_PAYLOAD);
 
-    // Start receiver
-    PTX = 0;        // Start in receiving mode
-    RX_POWERUP;     // Power up in receiving mode
-    wl_module_CE_hi;     // Listening for pakets
-}
+//     // Start receiver
+//     PTX = 0;        // Start in receiving mode
+//     RX_POWERUP;     // Power up in receiving mode
+//     wl_module_CE_hi;     // Listening for pakets
+// }
 
-// Sets the wl-module as one of the six sender. Define for every sender a unique Number (wl_module_TX_NR_x)
-// when you call this Function.
-//  Each TX will get a TX-Address corresponding to the RX-Device.
+// Sets the wl-module as one of the six sender. Define for every
+// sender a unique Number (wl_module_TX_NR_x) when you call this
+// Function.
+//
+// Each TX will get a TX-Address corresponding to the RX-Device.
+//
 // RX_Address_Pipe_0 must be the same as the TX-Address
 void wl_module_tx_config(uint8_t tx_nr)
 {
@@ -163,8 +189,6 @@ void wl_module_tx_config(uint8_t tx_nr)
     wl_module_config_register(RF_SETUP,wl_module_RF_SETUP);
     // Config the CONFIG Register (Mask IRQ, CRC, etc)
     wl_module_config_register(CONFIG, wl_module_CONFIG);
-    // Set length of incoming payload
-    //wl_module_config_register(RX_PW_P0, wl_module_PAYLOAD);
 
     wl_module_config_register(SETUP_RETR, (SETUP_RETR_ARD_750 | SETUP_RETR_ARC_15));
 
@@ -208,13 +232,6 @@ void wl_module_tx_config(uint8_t tx_nr)
 
     PTX = 0;
     TX_POWERUP;
-
-    /*
-    // Start receiver
-    PTX = 0;        // Start in receiving mode
-    RX_POWERUP;     // Power up in receiving mode
-    wl_module_CE_hi;     // Listening for pakets
-    */
 }
 
 // Sets the TX address in the TX_ADDR register.
@@ -468,14 +485,26 @@ uint8_t wl_module_get_one_byte(uint8_t command)
 }
 
 // Reads wl_module_PAYLOAD bytes into data array
-uint8_t wl_module_get_data(uint8_t *data)
+// uint8_t wl_module_get_data(uint8_t *data)
+// {
+//     uint8_t status;
+//     wl_module_CSN_lo;                                 // Pull down chip select
+//     status = spi_fast_shift( R_RX_PAYLOAD );          // Send cmd to read rx payload
+//     spi_transfer_sync(data, data, wl_module_PAYLOAD); // Read payload
+//     wl_module_CSN_hi;                                 // Pull up chip select
+//     wl_module_config_register(STATUS,(1 << RX_DR));   // Reset status register
+//     return status;
+// }
+
+// Reads given payload count bytes into data array
+uint8_t wl_module_get_data_n(uint8_t *data, uint8_t len)
 {
     uint8_t status;
     wl_module_CSN_lo;                               // Pull down chip select
-    status = spi_fast_shift( R_RX_PAYLOAD );            // Send cmd to read rx payload
-    spi_transfer_sync(data,data,wl_module_PAYLOAD); // Read payload
+    status = spi_fast_shift(R_RX_PAYLOAD);          // Send cmd to read rx payload
+    spi_transfer_sync(data, data, len);             // Read payload
     wl_module_CSN_hi;                               // Pull up chip select
-    wl_module_config_register(STATUS,(1<<RX_DR));   // Reset status register
+    wl_module_config_register(STATUS,(1 << RX_DR)); // Reset status register
     return status;
 }
 
@@ -533,4 +562,4 @@ void wl_module_send(uint8_t *value, uint8_t len)
     wl_module_CE_lo;
 }
 
-/* EOF */
+// EOF

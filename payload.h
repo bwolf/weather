@@ -4,6 +4,7 @@
 // Requires sht11.h, bmp085.h
 
 typedef struct payload {
+    uint8_t station_id;
     bmp085_t bmp085;
     sht11_t sht11;
 } payload_t;
