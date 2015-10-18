@@ -12,21 +12,29 @@ if [[ $(dirname "$0") != . ]]; then
 fi
 
 case "$1" in
-    station|s*)
+    q|qu|que|quer|query)
+        link=$(readlink Makefile)
+        if [[ $? -ne 0 ]]; then
+            exit $?
+        fi
+        name=${link#Makefile_}
+        echo "$name"
+        ;;
+    s|st|sta|stati|statio|station)
         ln -sf Makefile_station Makefile
         ln -sf config_station.h config.h
         rm -f *.o *.elf *.lss *.lst *.map *.eep *.hex *.sym
         rm -rf .dep
         ctags -Re -f TAGS *.[ch]
         ;;
-    base|b*)
+    b|ba|bas|base)
         ln -sf Makefile_base Makefile
         ln -sf config_base.h config.h
         rm -f *.o *.elf *.lss *.lst *.map *.eep *.hex *.sym
         rm -rf .dep
         ctags -Re -f TAGS *.[ch]
         ;;
-    clean|c*)
+    c|cl|cle|clea|clean)
         if [ -f Makefile ]; then
             make clean
         fi

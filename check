@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+# Check if all configurable modules build.
+
+CURRENT=$(./config query)
+if [[ $? -ne 0 ]]; then
+    CURRENT=NONE
+fi
+
+for x in base station; do
+    ./config $x
+    make
+    if [[ $? -ne 0 ]]; then
+        printf "\n\nERROR: fix build configuration $x!\n" >&2
+        exit 1
+    fi
+done
+
+printf "\n\nOK: Looks good so far!\n" >&2
+
+if [[ $CURRENT != NONE ]]; then
+    ./config "$CURRENT"
+fi
+
+# EOF
