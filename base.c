@@ -12,7 +12,7 @@
 
 #include "dbgled.h"
 
-// Use wl_highlevel such that includes of nRF24l01 are not needed
+// TODO Use wl_highlevel such that includes of nRF24l01 are not needed
 #include "nRF24l01.h"
 #include "wl_module.h"
 #include "spi.h"
@@ -70,7 +70,7 @@ main(void)
     sei(); // activate Interrupts
 
     wl_module_config_n(sizeof(payload)); // config nRF as RX Module, with payload length
-    _delay_ms(10);
+    _delay_ms(50);
 
 
     // TODO clean up this mess, integrate into wl_highlevel?
