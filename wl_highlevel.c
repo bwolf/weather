@@ -60,8 +60,7 @@ void wlhl_init(void)
     wl_module_CSN_hi;           // Pull up chip select
 }
 
-// TODO rename wlhl_busy_p
-uint8_t wlhl_is_busy(void)
+uint8_t wlhl_busy_p(void)
 {
     return PTX;
 }
@@ -78,6 +77,10 @@ void wlhl_power_down(void)
     wl_module_power_down();
 }
 
+// Send given payload of length.
+//
+// Commentary
+//
 // From datasheet p. 29: With static payload length all packets
 // between a transmitter and a receiver have the same length. Static
 // payload length is set by the RX_PW_Px registers on the receiver

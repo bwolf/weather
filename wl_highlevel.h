@@ -7,7 +7,7 @@
 // #define WIRELESS_MAX_PAYLOAD 16
 
 void    wlhl_init(void);
-uint8_t wlhl_is_busy(void);
+uint8_t wlhl_busy_p(void);
 void    wlhl_power_up(void);
 void    wlhl_power_down(void);
 void    wlhl_send_payload(uint8_t* data, uint8_t len);

@@ -59,7 +59,7 @@ static uint8_t power_down_p(void)
 {
     // nRF24L01+ may be busy during transmission, so don't power down
     // unconditionally.
-    return !wlhl_is_busy();
+    return !wlhl_busy_p();
 }
 
 // Power down all subsystems.
@@ -115,7 +115,7 @@ static void dowork(void)
 
     dbgled_red_on(); // LED enable
 
-    if (wlhl_is_busy()) {
+    if (wlhl_busy_p()) {
         // Do nothing, give wireless module time to finish
         uart_putsln_P("wireless_is_busy");
     } else {
