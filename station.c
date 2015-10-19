@@ -34,7 +34,7 @@
 
 
 // TODO externalize, useful in base too
-static inline void disable_ad_converter(void)
+static void disable_ad_converter(void)
 {
 #ifdef __AVR_ATmega8__
     ADCSRA &= ~(1 << ADEN);
@@ -44,7 +44,7 @@ static inline void disable_ad_converter(void)
 }
 
 // TODO externalize, useful in base too
-static inline void disable_analog_comparator(void)
+static void disable_analog_comparator(void)
 {
 #ifdef __AVR_ATmega8__
     SFIOR |= (1 << ACD);
