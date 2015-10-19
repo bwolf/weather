@@ -3,6 +3,7 @@
 /TAGS
 /config.h
 /Makefile
+/README.html
 *.eep
 *.elf
 *.hex
