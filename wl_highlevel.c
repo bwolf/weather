@@ -13,14 +13,54 @@
 
 #include "wl_highlevel.h"
 
-// TODO cleanup
-// #if WIRELESS_MAX_PAYLOAD > wl_module_PAYLOAD
-// # error "Inconsistent wireless vs. wl_module payload size!"
-// #endif
-
+// TODO remove this after RX/TX works.
 // Initialize wireless module.
 // Requires interrupts to be enabled.
-void wlhl_init(void)
+// void wlhl_init(void)
+// {
+//     uint8_t k;
+
+//     // -- Basic config
+//     wl_module_init();
+//     _delay_ms(50);
+
+//     // Configurate the interrupt
+//     WIRELESS_INTERRUPT_FALLING_EDGE();
+//     WIRELESS_INTERRUPT_ENABLE();
+
+//     // Configure SPI
+//     spi_init();
+
+//     // -- Config Module
+//     wl_module_tx_config(wl_module_TX_NR_0);
+
+//     // Wait for configuration to complete
+//     _delay_ms(10);
+
+//     // -- Check MAX_RT and clear it if set
+//     // Read wl_module status
+//     wl_module_CSN_lo;        //  Pull down chip select
+//     k = spi_fast_shift(NOP); // Read status register
+//     wl_module_CSN_hi;        // Pull up chip select
+
+//     if (k & STATUS_MAX_RT) {
+//         // Clearing STATUS_MAX_RT
+//         wl_module_config_register(STATUS, (1 << MAX_RT));
+//     }
+
+//     _delay_ms(10);
+
+//     // Flush data out of TX FIFO (there may be data after reset)
+//     wl_module_CSN_lo;           // Pull down chip select
+//     spi_fast_shift(FLUSH_TX);   // Write cmd to flush tx fifo
+//     wl_module_CSN_hi;           // Pull up chip select
+// }
+
+
+
+#ifdef WL_HIGHLEVEL_MODE_TX
+
+void wlhl_init_tx(void)
 {
     uint8_t k;
 
@@ -129,5 +169,147 @@ ISR(WIRELESS_INTERRUPT_VECT)
         wl_module_CSN_hi;         //  Pull up chip select
     }
 }
+
+#endif // WL_HIGHLEVEL_MODE_TX
+
+
+
+#ifdef WL_HIGHLEVEL_MODE_RX
+
+// Data ready flag, set by ISR, polled by wlhl_data_ready_p().
+static volatile uint8_t rx_data_ready = 0;
+
+// Requires interrupts enabled
+void wlhl_init_rx(uint8_t payload_len)
+{
+    // -- Basic config
+    wl_module_init();       // Init nRF Module
+    _delay_ms(50);
+
+    // Configure the interrupt
+    WIRELESS_INTERRUPT_FALLING_EDGE();
+    WIRELESS_INTERRUPT_ENABLE();
+
+    // Configure SPI
+    spi_init();
+
+    // -- Config Module
+    wl_module_config_n(payload_len); // config nRF as RX Module, with payload length
+    _delay_ms(50);
+
+
+    // TODO cleanup this mess and how?!!!
+    // ----------------------------------------------------------------------
+    // Debugging of restart problems after ISP
+    {
+        uint8_t r = 0, c = 0;
+
+        wl_module_read_register(CONFIG, &c, 1);
+        // uart_puts_P("CONFIG      ");
+        // uart_putu8_b(c);
+        // uart_crlf();
+
+        wl_module_CSN_lo;        // Pull down chip select
+        r = spi_fast_shift(NOP); // Read status register
+        wl_module_CSN_hi;        // Pull up chip select
+        // uart_puts_P("STATUS      ");
+        // uart_putu8_b(r);
+        // uart_crlf();
+
+        // Power down chip
+        c &= ~(1 << PWR_UP);
+        wl_module_write_register(CONFIG, &c, 1);
+        _delay_ms(5);
+
+        // Clear MAX_RT if asserted
+        if (r & (1 << MAX_RT)) {
+            // uart_putsln_P("Clearing MAX_RT");
+            wl_module_config_register(STATUS, (1 << MAX_RT));
+        }
+
+        // Flush RX
+        if (r & (1 << RX_DR)) {
+            // uart_putsln_P("Flushing RX");
+            wl_module_CSN_lo;         // Pull down chip select
+            spi_fast_shift(FLUSH_RX); // Write cmd to flush tx fifo
+            wl_module_CSN_hi;         // Pull up chip select
+            wl_module_config_register(STATUS, (1 << RX_DR));
+        }
+
+        // Flush TX
+        if (r & (1 << TX_DS) || r & (1 << TX_FULL)) {
+            // uart_putsln_P("Flushing TX");
+            wl_module_CSN_lo;
+            spi_fast_shift(FLUSH_TX);
+            wl_module_CSN_hi;
+            wl_module_config_register(STATUS, (1 << TX_DS));
+        }
+
+        // Power up chip
+        c |= (1 << PWR_UP);
+        wl_module_write_register(CONFIG, &c, 1);
+        _delay_ms(5);
+
+        wl_module_read_register(CONFIG, &c, 1);
+        // uart_puts_P("CONFIG      ");
+        // uart_putu8_b(c);
+        // uart_crlf();
+
+        // wl_module_CSN_lo;        // Pull down chip select
+        // r = spi_fast_shift(NOP); // Read status register
+        // wl_module_CSN_hi;        // Pull up chip select
+        // uart_puts_P("STATUS      ");
+        // uart_putu8_b(r);
+        // uart_crlf();
+
+        wl_module_read_register(EN_RXADDR, &r, 1);
+        // uart_puts_P("EN_RXADDR   ");
+        // uart_putu8_b(r);
+        // uart_crlf();
+
+        // Overwrite EN_RXADDR with default values
+        if (r != ((1 << ERX_P1) | (1 << ERX_P0))) {
+            // uart_putsln_P("Resetting EN_RXADDR");
+            r = (1 << ERX_P1) | (1 << ERX_P0);
+            wl_module_write_register(EN_RXADDR, &r, 1);
+        }
+
+        // wl_module_read_register(FIFO_STATUS, &r, 1);
+        // uart_puts_P("FIFO_STATUS ");
+        // uart_putu8_b(r);
+        // uart_crlf();
+    }
+}
+
+uint8_t wlhl_data_ready_p(void)
+{
+    uint8_t tmp = rx_data_ready;
+    rx_data_ready = 0;
+    return tmp;
+}
+
+void wlhl_get_data(uint8_t *data, uint8_t len)
+{
+    (void) wl_module_get_data_n(data, len);
+}
+
+ISR(WIRELESS_INTERRUPT_VECT)
+{
+    uint8_t status;
+
+    wl_module_CSN_lo;             //  Pull down chip select
+    status = spi_fast_shift(NOP); //  Read status register
+    wl_module_CSN_hi;             //  Pull up chip select
+
+    // IRQ: Package has been received
+    if (status & (1 << RX_DR)) {
+        dbgled_red_on();
+        wl_module_config_register(STATUS, (1 << RX_DR)); // Clear interrupt bit
+        // Set flag to indicate main loop that data is ready
+        rx_data_ready = 1;
+    }
+}
+
+#endif // WL_HIGHLEVEL_MODE_RX
 
 // EOF

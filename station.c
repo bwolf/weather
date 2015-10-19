@@ -185,7 +185,7 @@ main(void)
 
     // Wireless setup requires interrupts
     _delay_ms(50); // TODO delay required?
-    wlhl_init();
+    wlhl_init_tx();
 
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down

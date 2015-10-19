@@ -117,4 +117,7 @@
 // Name of the interrupt vector
 #define WIRELESS_INTERRUPT_VECT INT0_vect
 
+// Wireless highlevel abstraction
+#define WL_HIGHLEVEL_MODE_TX
+
 #endif // CONFIG_H
