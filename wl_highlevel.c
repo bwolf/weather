@@ -13,50 +13,6 @@
 
 #include "wl_highlevel.h"
 
-// TODO remove this after RX/TX works.
-// Initialize wireless module.
-// Requires interrupts to be enabled.
-// void wlhl_init(void)
-// {
-//     uint8_t k;
-
-//     // -- Basic config
-//     wl_module_init();
-//     _delay_ms(50);
-
-//     // Configurate the interrupt
-//     WIRELESS_INTERRUPT_FALLING_EDGE();
-//     WIRELESS_INTERRUPT_ENABLE();
-
-//     // Configure SPI
-//     spi_init();
-
-//     // -- Config Module
-//     wl_module_tx_config(wl_module_TX_NR_0);
-
-//     // Wait for configuration to complete
-//     _delay_ms(10);
-
-//     // -- Check MAX_RT and clear it if set
-//     // Read wl_module status
-//     wl_module_CSN_lo;        //  Pull down chip select
-//     k = spi_fast_shift(NOP); // Read status register
-//     wl_module_CSN_hi;        // Pull up chip select
-
-//     if (k & STATUS_MAX_RT) {
-//         // Clearing STATUS_MAX_RT
-//         wl_module_config_register(STATUS, (1 << MAX_RT));
-//     }
-
-//     _delay_ms(10);
-
-//     // Flush data out of TX FIFO (there may be data after reset)
-//     wl_module_CSN_lo;           // Pull down chip select
-//     spi_fast_shift(FLUSH_TX);   // Write cmd to flush tx fifo
-//     wl_module_CSN_hi;           // Pull up chip select
-// }
-
-
 
 #ifdef WL_HIGHLEVEL_MODE_TX
 
@@ -293,6 +249,15 @@ void wlhl_get_data(uint8_t *data, uint8_t len)
     (void) wl_module_get_data_n(data, len);
 }
 
+// Commentary
+//
+// The alternative to use the interrupt is to poll for RX_DR Flag in
+// the STATUS register like this:
+//
+// while (!wl_module_data_ready()) {
+//     _delay_ms(1);
+// }
+//
 ISR(WIRELESS_INTERRUPT_VECT)
 {
     uint8_t status;
@@ -303,7 +268,7 @@ ISR(WIRELESS_INTERRUPT_VECT)
 
     // IRQ: Package has been received
     if (status & (1 << RX_DR)) {
-        dbgled_red_on();
+        dbgled_red_on(); // TODO remove debug led
         wl_module_config_register(STATUS, (1 << RX_DR)); // Clear interrupt bit
         // Set flag to indicate main loop that data is ready
         rx_data_ready = 1;
