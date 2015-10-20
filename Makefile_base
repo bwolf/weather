@@ -50,7 +50,8 @@ FORMAT = ihex
 TARGET = base
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c wl_module.c wl_highlevel.c spi.c uart.c uart_addons.c dbgled.c
+SRC = $(TARGET).c adc.c wl_module.c wl_highlevel.c spi.c uart.c \
+	uart_addons.c dbgled.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s

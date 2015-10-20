@@ -12,6 +12,8 @@
 
 #include "dbgled.h"
 
+#include "adc.h"
+
 #include "wl_highlevel.h"
 
 #define BMP085_DATA_TYPE_ONLY
@@ -49,6 +51,9 @@ static void get_payload_and_do_work(void)
 int __attribute__((OS_main))
 main(void)
 {
+    disable_ad_converter();
+    disable_analog_comparator();
+
     _delay_ms(100);
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
     dbgled_red_init();

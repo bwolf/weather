@@ -51,6 +51,7 @@ TARGET = station
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c uart.c uart_addons.c dbgled.c \
+	adc.c \
 	bmp085.c \
 	sht11.c twim.c \
 	rain.c \
