@@ -1,3 +1,5 @@
+// station.c -- Outdoor measurement station.
+
 #include "config.h"
 
 #include <avr/io.h>
@@ -6,8 +8,6 @@
 #include <avr/sleep.h>
 
 #include <util/delay.h>
-
-#include <stdlib.h>
 
 #include "uart.h"
 #include "uart_addons.h"
