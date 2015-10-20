@@ -7,7 +7,7 @@
                       (message "Disabled semantic-mode via .dir-locals.el")
                       (setq flycheck-checker 'c/c++-gcc
                             flycheck-c/c++-gcc-executable "/usr/local/bin/avr-gcc"
-                            flycheck-gcc-args '("-mmcu=atmega8" "-Os")
+                            flycheck-gcc-args '("-mmcu=atmega88pa" "-Os")
                             flycheck-gcc-definitions '("F_OSC=1000000")
                             flycheck-gcc-language-standard "gnu99"
                             flycheck-gcc-warnings '("all" "extra" "strict-prototypes" "fatal-errors"))
