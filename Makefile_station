@@ -37,7 +37,7 @@
 # - F_OSC Define in CFLAGS and AFLAGS
 
 # MCU name
-MCU = atmega8
+MCU = atmega88pa
 
 # Main Oscillator Frequency
 # This is only used to define F_OSC in all assembler and c-sources.

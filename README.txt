@@ -1,7 +1,6 @@
 #+TITLE: README
 #+AUTHOR: Marcus Geiger
 
-
 * Electrical characteristics
 
 |               | U min | U Max | I min/µA | I max/mA |
@@ -21,3 +20,7 @@
 
 
 
+* COMMENT Footer
+# Local Variables:
+# mode: org
+# End:

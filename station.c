@@ -36,7 +36,7 @@
 // TODO externalize, useful in base too
 static void disable_ad_converter(void)
 {
-#ifdef __AVR_ATmega8__
+#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega88PA__)
     ADCSRA &= ~(1 << ADEN);
 #else
 # error "Unsupported MCU"
@@ -47,7 +47,10 @@ static void disable_ad_converter(void)
 static void disable_analog_comparator(void)
 {
 #ifdef __AVR_ATmega8__
-    SFIOR |= (1 << ACD);
+    ACSR |= (1 << ACD); // Analog comparator disable
+#elif __AVR_ATmega88PA__
+    ACSR |= (1 << ACD); // Analog comparator disable
+    DIDR1|= (1 << AIN1D) | (1 << AIN0D); // Disable input disable register
 #else
 # error "Unsupported MCU"
 #endif
@@ -169,15 +172,25 @@ main(void)
 
     // Use timer/counter2 in async mode to wakeup from power save.
     // An external resonator with 32.768 kHz is required on TOSC1/TOSC2.
-    ASSR  = (1<< AS2); // Drive timer2 asynchronously
-    _delay_ms(1000);   // Wait until external resonator is stable
-    TCCR2 |= (1 << CS22) | (1 << CS20); // Prescaler 128
-    while ((ASSR & (1<< TCR2UB)))       // Wait until register access has completed
-        ;
+    ASSR  = (1<< AS2);                   // Drive timer2 asynchronously
+    _delay_ms(1000);                     // Wait until external resonator is stable
 
-    TIFR   = (1<<TOV2);  // Clear timer interrupts (*)
-    TIMSK |= (1<<TOIE2); // Enable timer overflow interrupt
-    // (*) Alternatively, TOV2 is cleared by writing logic one to the flag.
+#if defined(__AVR_ATmega88__)
+    TCCR2 |= (1 << CS22) | (1 << CS20);  // Prescaler 128
+    while ((ASSR & (1 << TCR2UB)))       // Wait until register access has completed
+        ;
+    TIFR = (1 << TOV2);                  // Clear timer interrupts
+    TIMSK |= (1 << TOIE2);               // Enable timer overflow interrupt
+#elif defined(__AVR_ATmega88PA__)
+    TCCR2B |= (1 << CS22) | (1 << CS20); // Prescaler 128
+    while ((ASSR & (1 << TCR2BUB)))      // Wait until register access has completed
+        ;
+    TIFR2 = (1 << TOV2);                 // Clear timer interrupts
+    TIMSK2 |= (1 << TOIE2);              // Enable timer overflow interrupt
+#else
+# error "Unsupported MCU."
+#endif
+
 
     sei(); // With interrupts...
 
@@ -203,9 +216,17 @@ main(void)
         // ensured that the main loop plus the interrupt logic take
         // longer than 30us. The following two lines ensure the
         // minimum time.
-        OCR2 = 0;                    // Dummy access
-        while((ASSR & (1<< OCR2UB))) // Wait until register access has completed
+#if defined(__AVR_ATmega88__)
+        OCR2 = 0;                       // Dummy access
+        while ((ASSR & (1<< OCR2UB)))   // Wait until register access has completed
             ;
+#elif defined(__AVR_ATmega88PA__)
+        OCR2A = 0;                      // Dummy access
+        while ((ASSR & (1 << OCR2BUB))) // Wait until register access has completed
+            ;
+#else
+# error "Unsupported MCU."
+#endif
 
         if (power_down_p()) {
 #ifdef WITH_POWERDOWN
