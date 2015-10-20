@@ -37,7 +37,7 @@
 # - F_OSC Define in CFLAGS and AFLAGS
 
 # MCU name
-MCU = atmega8
+MCU = atmega88pa
 
 # Main Oscillator Frequency
 # This is only used to define F_OSC in all assembler and c-sources.
@@ -192,8 +192,16 @@ AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 #AVRDUDE_VERBOSE = -vvvv
 #AVRDUDE_VERBOSE = -v
 
-#AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
-AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -B5
+# The ATmega88pa is a valid GCC target, but avrdude only knows about the ATmega88p
+ifeq ($(MCU), atmega88pa)
+	AVRDUDE_MCU=m88p
+else
+	AVRDUDE_MCU=$(MCU)
+endif
+
+# AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
+# AVRDUDE_FLAGS = -p $(MCU) -c $(AVRDUDE_PROGRAMMER) -B5
+AVRDUDE_FLAGS = -p $(AVRDUDE_MCU) -c $(AVRDUDE_PROGRAMMER) -B5
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
