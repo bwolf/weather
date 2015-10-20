@@ -151,7 +151,7 @@ static void dowork(void)
 
 
 // Do work after 10 seconds
-#define TIMER2_TICKS_UNTIL_WORK 10
+#define TIMER2_TICKS_UNTIL_WORK 10 // TODO adjust prescaler and TICKS to sleep longer
 
 static volatile uint8_t dowork_flag;
 
