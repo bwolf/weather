@@ -118,16 +118,12 @@
 
 // Timer overflow interrupt enable
 #define RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE() (RAIN_DEBOUNCE_TIMER_INTERRUPT_MASK_REG |= (1 << TOIE0))
-
 // Name of the timer overflow interrupt vector
 #define RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT TIMER0_OVF_vect
-
 // Set external interrupt on falling edge for INT1
 #define RAIN_INTERRUPT_FALLING_EDGE() (RAIN_INTERRUPT_CONTROL_REG = (1 << ISC11))
-
 // Activate external interrupt INT1
 #define RAIN_INTERRUPT_ENABLE() (RAIN_INTERRUPT_MASK_REG = (1 << INT1))
-
 // Name of the interrupt vector
 #define RAIN_INTERRUPT_VECT INT1_vect
 
