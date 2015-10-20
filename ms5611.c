@@ -1,4 +1,4 @@
-// ms5611.c -- Pressure sensor M5611 from meas-spec.com.
+// ms5611.c -- Pressure sensor MS5611 from meas-spec.com.
 
 #include "config.h"
 
