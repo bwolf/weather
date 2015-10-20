@@ -35,7 +35,6 @@
 #endif
 
 
-
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
@@ -75,7 +74,6 @@ static void subsystems_power_up(void)
 }
 
 
-
 static bmp085_coeff_t bmp085_coeff; // BMP085 EEPROM coefficients for calculation
 
 // Global variable containing sensor read out to be transmitted wireless

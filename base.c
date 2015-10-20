@@ -47,7 +47,6 @@ static void get_payload_and_do_work(void)
 }
 
 
-
 int __attribute__((OS_main))
 main(void)
 {
