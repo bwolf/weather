@@ -168,7 +168,6 @@ main(void)
 # error "Unsupported MCU."
 #endif
 
-
     sei(); // With interrupts...
 
     uart_ff();
