@@ -101,22 +101,20 @@ static void dowork(void)
     } else {
         // -- BMP086 / Pressure
         bmp085_read(&payload.bmp085, &bmp085_coeff);
-        // Debug output
-        uart_puti16(payload.bmp085.decicelsius); uart_space();
-        uart_putu16(payload.bmp085.pressure_nn); uart_space();
 
         // -- SHT11 / Humidity
         sht11_init();
         if (sht11_read(&payload.sht11)) {
-            uart_puts_P("sht11 error"); // Debug output
-        } else {
-            // Debug output
-            uart_puti16(payload.sht11.temp); uart_space();
-            uart_puti16(payload.sht11.rh_true);
+            uart_puts_P("SHT11 ERROR"); // Debug output
         }
         sht11_down();
 
-        uart_crlf(); // Debug output
+        // Debug output
+        uart_puti16(payload.bmp085.decicelsius); uart_space();
+        uart_putu16(payload.bmp085.pressure_nn); uart_space();
+        uart_puti16(payload.sht11.temp); uart_space();
+        uart_puti16(payload.sht11.rh_true);
+        uart_crlf();
 
         // Transmit measurements
         dbgled_green_toggle();
