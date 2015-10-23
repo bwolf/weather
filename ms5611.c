@@ -3,9 +3,15 @@
 #include "config.h"
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
 
 #include "twim.h"
+
+#include "uart.h"
+#include "uart_addons.h"
+
+#include "ms5611.h"
 
 #define ADDR_W  0xEE // Module address write mode
 #define ADDR_R  0xEF // Module address read mode
@@ -168,11 +174,6 @@ static uint8_t calc_crc4(uint16_t prom[8])
 }
 
 
-typedef struct ms5611 {
-    int16_t temperature; // Temperature in decicelsius
-    uint16_t pressure;   // Pressure in millis
-} ms5611_t;
-
 // 1st order conversion
 void ms5611_read(ms5611_t *ms5611)
 {
@@ -181,7 +182,7 @@ void ms5611_read(ms5611_t *ms5611)
     uint16_t C[8]; // Calibration coefficients [1],[2]
     float P;       // Compensated pressure value
     float T;       // Compensated temperature value
-    int32_t dT;    // Difference between actual and measured temperature
+    float dT;    // Difference between actual and measured temperature
     float OFF;     // Offset at actual temperature
     float SENS;    // Sensitivity at actual temperature
 
@@ -192,25 +193,59 @@ void ms5611_read(ms5611_t *ms5611)
 
     send_reset_cmd();
     read_prom_data(C);
+    uart_putu16(C[0]); uart_space();
+    uart_putu16(C[1]); uart_space();
+    uart_putu16(C[2]); uart_space();
+    uart_putu16(C[3]); uart_space();
+    uart_putu16(C[4]); uart_space();
+    uart_putu16(C[5]); uart_space();
+    uart_putu16(C[6]); uart_space();
+    uart_putu16(C[7]); uart_space();
 
     // TODO CRC is not verified
     crc = calc_crc4(C); // Calculate the CRC
-    D2 = cmd_adc(CMD_ADC_D2 + CMD_ADC_4096); // read D2, temperature value
+    D2 = cmd_adc(CMD_ADC_D2 + CMD_ADC_4096); // read D2, temperature value // TODO hard coded 4096 val
+    uart_putu32(D2); uart_space();
     D1 = cmd_adc(CMD_ADC_D1 + CMD_ADC_4096); // read D1, pressure value
+    uart_putu32(D1); uart_space();
+    if (D2 == 0 || D1 == 0)
+        uart_puts_P(" error D1 || D2");
 
     // TODO according data sheet all calculations can be performed with integers
 
     // Calculate compensated temperature
-    dT = D2 - C[5] * 256;                     // 2^8  = 256
-    T = (2000 + (dT * C[6]) / 8388608) / 100; // 2^23 = 8388608
+    dT = D2 - C[5] * 256.f;
+    // T = (2000 + (dT * C6) / 2^23) / 10
+    // T = (2000.f + (dT * C[6]) / pow(2,23)) / 10.f;
+    T = (2000.f + (dT * C[6]) / 8388608.f) / 10.f;
+
+    int32_t tu = (int32_t) T;
+    uart_puti32(tu); uart_space();
 
     // Calculate temperature compensated pressure
-    OFF =  C[2] * 131072 + dT * C[4] / 64;             // 2^17 = 131072, 2^6 = 64
-    SENS = C[1] * 65536  + dT * C[3] / 128;            // 2^16 = 65536,  2^7 = 128
-    P = (((D1 * SENS) / 2097152 - OFF) / 32768) / 100; // 2^21 = 2097152, 2^15 = 32768
+    // OFF = C2 * 2^16 + dT * C4 / 2^7
+    OFF = C[2] * 65536.f + dT * C[4] / 128;
 
-    ms5611->temperature = T;
-    ms5611->pressure = P;
+    // SENS = C1 * 2^15 + dT * C3 / 2^8
+    SENS = C[1] * 32768.f + dT * C[3] / 256.f;
+
+    // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
+    P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
+
+    uint32_t pu = (uint32_t) P;
+    uart_putu32(pu); uart_space();
+
+    uint16_t bmp085_calculate_pressure_nn16(int32_t p);
+    uint16_t pNN = bmp085_calculate_pressure_nn16(pu);
+    uart_putu16(pNN); uart_space();
+
+
+    // OFF =  C[2] * 131072 + dT * C[4] / 64;             // 2^17 = 131072, 2^6 = 64
+    // SENS = C[1] * 65536  + dT * C[3] / 128;            // 2^16 = 65536,  2^7 = 128
+    // P = (((D1 * SENS) / 2097152 - OFF) / 32768) / 100; // 2^21 = 2097152, 2^15 = 32768
+
+    // ms5611->temperature = T;
+    // ms5611->pressure = P;
 }
 
 // EOF
