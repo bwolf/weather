@@ -1,6 +1,14 @@
 #+TITLE: README
 #+AUTHOR: Marcus Geiger
 
+* Open points/Todos
+** TODO Finish rain sensor code
+** TODO Clean up wireless high level code 
+** TODO Integrate IIR filter
+Use a warm up loop after reset to warm up the filter value.
+** TODO Main timer higher prescaler
+
+
 * Electrical characteristics
 
 |               | U min | U Max | I min/µA | I max/mA |
