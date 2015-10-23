@@ -3,7 +3,7 @@
 ME=$(basename "$0")
 
 function usage {
-   echo "Usage: $ME station|base|clean" >&2
+   echo "Usage: $ME query|station|base|clean" >&2
    exit 1
 }
 
@@ -38,7 +38,7 @@ case "$1" in
         if [ -f Makefile ]; then
             make clean
         fi
-        rm -f Makefile config.h TAGS
+        rm -f Makefile config.h TAGS html latex
         ;;
     *)
         usage
