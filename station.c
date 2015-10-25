@@ -113,8 +113,6 @@ static void dowork(void)
 
         // -- MS5611 / Pressure
         ms5611_read_data(&ms5611, &ms5611_coeff, MS5611_OVERSAMPLING_4096);
-        uart_puti16(ms5611.temperature); uart_space();
-        uart_putu16(ms5611.pressure); uart_space();
 
         // -- SHT11 / Humidity
         sht11_init();
@@ -126,6 +124,8 @@ static void dowork(void)
         // Debug output
         uart_puti16(payload.bmp085.decicelsius); uart_space();
         uart_putu16(payload.bmp085.pressure_nn); uart_space();
+        uart_puti16(ms5611.temperature); uart_space();
+        uart_putu16(ms5611.pressure); uart_space();
         uart_puti16(payload.sht11.temp); uart_space();
         uart_puti16(payload.sht11.rh_true);
         uart_crlf();

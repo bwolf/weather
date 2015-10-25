@@ -29,9 +29,6 @@ void wlhl_init_tx(void)
     WIRELESS_INTERRUPT_FALLING_EDGE();
     WIRELESS_INTERRUPT_ENABLE();
 
-    // Configure SPI
-    //spi_init();
-
     // -- Config Module
     wl_module_tx_config(wl_module_TX_NR_0);
 
