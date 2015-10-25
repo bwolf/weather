@@ -399,7 +399,7 @@ void sht11_down(void)
 
 #define READ_MAX_ATTEMPTS 10
 
-uint8_t sht11_read(sht11_t *sht11)
+uint8_t sht11_read_data(sht11_t *sht11)
 {
     uint8_t n;
     int16_t temp = 0;  // raw temperature

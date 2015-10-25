@@ -29,7 +29,7 @@ typedef struct sht11 {
 //
 // Return: 0 on success, fills given sht11 struct
 //
-uint8_t sht11_read(sht11_t *sht11);
+uint8_t sht11_read_data(sht11_t *sht11);
 
 // Low level interface
 

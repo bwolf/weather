@@ -118,7 +118,7 @@ static void dowork(void)
 
         // -- SHT11 / Humidity
         sht11_init();
-        if (sht11_read(&payload.sht11)) {
+        if (sht11_read_data(&payload.sht11)) {
             uart_puts_P("SHT11 ERROR"); // Debug output
         }
         sht11_down();
