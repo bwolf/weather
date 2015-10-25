@@ -187,8 +187,6 @@ main(void)
 
     sei(); // With interrupts...
 
-    // uart_ff();
-
     // Wireless setup requires interrupts
     _delay_ms(50); // TODO delay required?
     wlhl_init_tx();
