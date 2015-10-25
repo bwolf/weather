@@ -210,8 +210,9 @@ void ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff, // TODO const for
     D2 = send_adc_cmd(CMD_ADC_D2 + oversampling); // Read D2: temperature value
     // uart_putu32(D2); uart_space();
 
-    if (D2 == 0 || D1 == 0)
+    if (D2 == 0 || D1 == 0) {
         uart_puts_P(" error D1 || D2");
+    }
 
     // TODO according data sheet all calculations can be performed with integers
 
