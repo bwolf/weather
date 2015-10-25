@@ -43,8 +43,7 @@ static uint8_t power_down_p(void)
 {
     // nRF24L01+ may be busy during transmission, so don't power down
     // unconditionally.
-    // return !wlhl_busy_p();
-    return 1;
+    return !wlhl_busy_p();
 }
 
 // Power down all subsystems.
@@ -63,7 +62,7 @@ static void subsystems_power_down(void)
     TWCR &= ~(1 << TWEN);
 
     // nRF24L01+
-    // wlhl_power_down();
+    wlhl_power_down();
 }
 
 // Power up all subsystems
@@ -77,7 +76,7 @@ static void subsystems_power_up(void)
     TWCR |= (1 << TWEN);
 
     // nRF24L01+ powering up takes some ms!
-    // wlhl_power_up();
+    wlhl_power_up();
 }
 
 
@@ -105,41 +104,36 @@ static void dowork(void)
 
     dbgled_red_on(); // LED enable
 
-    // if (wlhl_busy_p()) {
-    //     // Do nothing, give wireless module time to finish
-    //     uart_putsln_P("wireless_is_busy");
-    // } else {
-    //     // -- BMP086 / Pressure
-    //     bmp085_read(&payload.bmp085, &bmp085_coeff);
+    if (wlhl_busy_p()) {
+        // Do nothing, give wireless module time to finish
+        uart_putsln_P("wireless_is_busy");
+    } else {
+        // -- BMP086 / Pressure
+        bmp085_read_data(&payload.bmp085, &bmp085_coeff);
 
-    //     // -- SHT11 / Humidity
-    //     sht11_init();
-    //     if (sht11_read(&payload.sht11)) {
-    //         uart_puts_P("SHT11 ERROR"); // Debug output
-    //     }
-    //     sht11_down();
+        // -- MS5611 / Pressure
+        ms5611_read_data(&ms5611, &ms5611_coeff, MS5611_OVERSAMPLING_4096);
+        uart_puti16(ms5611.temperature); uart_space();
+        uart_putu16(ms5611.pressure); uart_space();
 
-    //     // Debug output
-    //     uart_puti16(payload.bmp085.decicelsius); uart_space();
-    //     uart_putu16(payload.bmp085.pressure_nn); uart_space();
-    //     uart_puti16(payload.sht11.temp); uart_space();
-    //     uart_puti16(payload.sht11.rh_true);
-    //     uart_crlf();
+        // -- SHT11 / Humidity
+        sht11_init();
+        if (sht11_read(&payload.sht11)) {
+            uart_puts_P("SHT11 ERROR"); // Debug output
+        }
+        sht11_down();
 
-    //     // Transmit measurements
-    //     dbgled_green_toggle();
-    //     wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
-    // }
+        // Debug output
+        uart_puti16(payload.bmp085.decicelsius); uart_space();
+        uart_putu16(payload.bmp085.pressure_nn); uart_space();
+        uart_puti16(payload.sht11.temp); uart_space();
+        uart_puti16(payload.sht11.rh_true);
+        uart_crlf();
 
-    bmp085_read_data(&payload.bmp085, &bmp085_coeff);
-    uart_puti16(payload.bmp085.decicelsius); uart_space();
-    uart_putu16(payload.bmp085.pressure_nn); uart_space();
-
-    ms5611_read_data(&ms5611, &ms5611_coeff, MS5611_OVERSAMPLING_4096);
-    uart_puti16(ms5611.temperature); uart_space();
-    uart_putu16(ms5611.pressure); uart_space();
-
-    uart_crlf();
+        // Transmit measurements
+        dbgled_green_toggle();
+        wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
+    }
 
     dbgled_red_off();
 }
@@ -197,7 +191,7 @@ main(void)
 
     // Wireless setup requires interrupts
     _delay_ms(50); // TODO delay required?
-    // wlhl_init_tx();
+    wlhl_init_tx();
 
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down

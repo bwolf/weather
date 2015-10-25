@@ -16,6 +16,7 @@
 
 #ifdef WL_HIGHLEVEL_MODE_TX
 
+// SPI needs to be initialized before
 void wlhl_init_tx(void)
 {
     uint8_t k;
@@ -29,7 +30,7 @@ void wlhl_init_tx(void)
     WIRELESS_INTERRUPT_ENABLE();
 
     // Configure SPI
-    spi_init();
+    //spi_init();
 
     // -- Config Module
     wl_module_tx_config(wl_module_TX_NR_0);
