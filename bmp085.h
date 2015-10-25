@@ -44,7 +44,7 @@ uint32_t bmp085_calculate_pressure_nn(int32_t p);
 uint16_t bmp085_calculate_pressure_nn16(int32_t p);
 
 // All in one functionality
-void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085);
+void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085);
 
 #endif // BMP085_DATA_TYPE_ONLY
 

@@ -6,15 +6,18 @@
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
-#include "twim.h"
+// #include "twim.h"
+#include "spi.h"
 
 #include "uart.h"
 #include "uart_addons.h"
 
+#include "pressure.h"
+
 #include "ms5611.h"
 
-#define ADDR_W  0xEE // Module address write mode
-#define ADDR_R  0xEF // Module address read mode
+
+// SPI interface
 
 #define CMD_RESET    0x1E // ADC reset command
 #define CMD_ADC_READ 0x00 // ADC read command
@@ -24,228 +27,218 @@
 #define CMD_ADC_256  0x00 // ADC OSR=256
 #define CMD_ADC_512  0x02 // ADC OSR=512
 #define CMD_ADC_1024 0x04 // ADC OSR=1024
-#define CMD_ADC_2048 0x06 // ADC OSR=2048
+#define CMD_ADC_2048 0x06 // ADC OSR=2056
 #define CMD_ADC_4096 0x08 // ADC OSR=4096
 #define CMD_PROM_RD  0xA0 // Prom read command
 
-//********************************************************
-//! @brief Send command using I2C hardware interface.
-//!
-//! @return none
-//********************************************************
-static void i2c_send(uint8_t cmd)
-{
-    uint8_t ret;
+#define csb_lo() MS5611_CSB_PORT &= ~(1 << MS5611_CSB_PORT_NO)
+#define csb_hi() MS5611_CSB_PORT |=  (1 << MS5611_CSB_PORT_NO)
 
-    ret = twi_start(ADDR_W); // Set device address and write mode
-    if (ret) { // Failed to issue start condition, possibly no device found
-        twi_stop();
-    } else {   // Issuing start condition ok, device accessible
-        (void) twi_write(cmd);
-        twi_stop();
-    }
+/**
+ * @brief Initialize MS5611 module.
+ */
+void ms5611_init(void)
+{
+    // Chip select port/pin as output
+    MS5611_CSB_DDR |= (1 << MS5611_CSB_PORT_NO);
+    csb_hi(); // Initially deselect chip (high)
 }
 
-//********************************************************
-//! @brief Send reset sequence.
-//!
-//! @return none
-//********************************************************
+/**
+ * @brief send reset sequence
+ */
 static void send_reset_cmd(void)
 {
-    i2c_send(CMD_RESET); // Send reset sequence
-    _delay_ms(3);        // Wait for the reset sequence timing
+    csb_lo();                         // pull CSB low to start the command
+    (void) spi_fast_shift(CMD_RESET); // send reset sequence
+    _delay_ms(3);                     // wait for the reset sequence timing
+    csb_hi();                         // pull CSB high to finish the command
 }
 
-//********************************************************
-//! @brief Preform adc conversion.
-//!
-//! @return 24bit result
-//********************************************************
-static uint32_t cmd_adc(uint8_t cmd)
+/**
+ * @brief Preform ADC conversion.
+ *
+ * @return 24bit result
+ */
+static uint32_t send_adc_cmd(uint8_t cmd)
 {
     uint16_t ret;
     uint32_t temp = 0;
 
-    i2c_send(CMD_ADC_CONV+cmd); // Send conversion command
+    csb_lo();                                // Pull CSB low
+    (void) spi_fast_shift(CMD_ADC_CONV+cmd); // Send conversion command
 
-    // Wait necessary conversion time
-    switch (cmd & 0x0f) {
-    case CMD_ADC_256:  _delay_us(900); break;
-    case CMD_ADC_512:  _delay_ms(3);   break;
+    switch (cmd & 0x0f) {                    // Wait necessary conversion time
+    case CMD_ADC_256 : _delay_us(900); break;
+    case CMD_ADC_512 : _delay_ms(3);   break;
     case CMD_ADC_1024: _delay_ms(4);   break;
     case CMD_ADC_2048: _delay_ms(6);   break;
     case CMD_ADC_4096: _delay_ms(10);  break;
+    default:                           break;
     }
 
-    i2c_send(CMD_ADC_READ);
+    csb_hi();                            // Pull CSB high to finish the conversion
+    csb_lo();                            // Pull CSB low to start new command
+    (void) spi_fast_shift(CMD_ADC_READ); // Send ADC read command
+    ret = spi_fast_shift(0x00);          // Send 0 to read 1st byte (MSB)
+    temp = 65536 * ret;
+    ret = spi_fast_shift(0x00);          // send 0 to read 2nd byte
+    temp = temp + 256 * ret;
+    ret = spi_fast_shift(0x00);          // send 0 to read 3rd byte (LSB)
+    temp = temp + ret;
+    csb_hi();                            // pull CSB high to finish the read command
 
-    ret = twi_start(ADDR_R); // Set device address and read mode
-    if (ret) {
-        // Failed to issue start condition, possibly no device found
-        twi_stop();
-    } else {
-        // Issuing start condition ok, device accessible
-        ret = twi_read_ack();  // Read MSB and acknowledge
-        temp = 65536 * ret;
-        ret = twi_read_ack();  // Read byte and acknowledge
-        temp = temp + 256 * ret;
-        ret = twi_read_nack(); // Read LSB and not acknowledge
-        temp = temp + ret;
-        twi_stop(); // Send stop condition
-    }
     return temp;
 }
 
-//********************************************************
-//! @brief Read calibration coefficients from PROM.
-//!
-//! @return factory data, coefficients, CRC
-//********************************************************
-static uint16_t read_prom(uint8_t prom_num)
+/**
+ * @brief Read calibration coefficients.
+ *
+ * @return coefficient
+ */
+static uint16_t send_prom_cmd(uint8_t coeff_num)
 {
     uint16_t ret;
-    uint16_t rC =0;
+    uint16_t rC = 0;
 
-    i2c_send(CMD_PROM_RD + prom_num * 2); // Send PROM READ command
-
-    ret = twi_start(ADDR_R); // Set device address and read mode
-    if (ret) {
-        // Failed to issue start condition, possibly no device found
-        twi_stop();
-    } else {
-        // Issuing start condition ok, device accessible
-        ret = twi_read_ack();  // Read MSB and acknowledge
-        rC = 256 * ret;
-        ret = twi_read_nack(); // Read LSB and not acknowledge
-        rC = rC + ret;
-        twi_stop();
-    }
+    csb_lo();                                           // Pull CSB low
+    (void) spi_fast_shift(CMD_PROM_RD + coeff_num * 2); // Send PROM READ command
+    ret = spi_fast_shift(0x00);                         // Send 0 to read the MSB
+    rC = (ret << 8);
+    ret = spi_fast_shift(0x00);                         // Send 0 to read the LSB
+    rC |= ret;
+    csb_hi();                                           // Pull CSB high
 
     return rC;
 }
 
-static void read_prom_data(uint16_t prom_data[8])
+/**
+ * @brief Calculate the CRC code.
+ *
+ * @return CRC code
+ */
+static uint8_t calc_crc4(uint16_t prom[])
 {
-    uint8_t i;
+    uint16_t nrem;     // CRC reminder
+    uint16_t crcread;  // Original value of the crc
 
-    for (i = 0; i < 8; i++) {
-        prom_data[i] = read_prom(i);
-    }
-}
-
-//********************************************************
-//! @brief Calculate the CRC code.
-//!
-//! @return crc code
-//********************************************************
-static uint8_t calc_crc4(uint16_t prom[8])
-{
-    int16_t cnt;       // Simple counter
-    uint16_t rem;      // CRC reminder
-    uint16_t crc_read; // Original value of the CRC
-    uint8_t  bitn;
-
-    rem = 0x00;
-    crc_read = prom[7];             // Save read CRC, see data sheet
+    nrem = 0x00;
+    crcread = prom[7]; // Save read CRC
     prom[7] = (0xFF00 & (prom[7])); // CRC byte is replaced by 0
 
-    for (cnt = 0; cnt < 16; cnt++) { // Operation is performed on bytes
+    // The following operation is performed on a sequence of bytes,
+    // this is why prom[7] is saved and restored.
+    for (uint8_t n = 0; n < 16; n++) {    // Operation is performed on bytes
         // Choose LSB or MSB
-        if (cnt%2==1) {
-            rem ^= (uint16_t) ((prom[cnt >> 1]) & 0x00FF);
+        if (n % 2 == 1) {
+            nrem ^= (unsigned short) ((prom[n >> 1]) & 0x00FF);
         } else {
-            rem ^= (uint16_t) (prom[cnt >> 1] >> 8);
+            nrem ^= (unsigned short) (prom[n >> 1] >> 8);
         }
 
-        for (bitn = 8; bitn > 0; bitn--) {
-            if (rem & (0x8000)) {
-                rem = (rem << 1) ^ 0x3000;
+        for (uint8_t nbit = 8; nbit > 0; nbit--) {
+            if (nrem & (0x8000)) {
+                nrem = (nrem << 1) ^ 0x3000;
             } else {
-                rem = (rem << 1);
+                nrem = (nrem << 1);
             }
         }
     }
 
-    rem =  (0x000F & (rem >> 12)); // Final 4-bit reminder is CRC code
-    prom[7] = crc_read;                // Restore the crc_read to its original place
+    nrem = (0x000F & (nrem >> 12)); // Final 4-bit reminder is CRC code
+    prom[7] = crcread;             // Restore the crcread to its original place
 
-    return (rem ^ 0x0);
+    return (nrem ^ 0x00);
 }
 
-
-// 1st order conversion
-void ms5611_read(ms5611_t *ms5611)
+/**
+ * @brief Read calibration coefficients.
+ */
+void ms5611_read_calibration_coefficients(ms5611_coeff_t *coeff)
+{
+    uint8_t i;
+
+    send_reset_cmd(); // Reset after power-up
+
+    for (i = 0; i < 8; i++) {
+        coeff->c[i] = send_prom_cmd(i);
+    }
+}
+
+/**
+ * @brief Perform 1st order conversion.
+ *
+ * @param coeff Calibration coefficients read from PROM.
+ */
+void ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff, // TODO const for coeff would be nice
+                      enum ms5611_oversampling oversampling)
 {
     uint32_t D1;   // ADC value of the pressure conversion
     uint32_t D2;   // ADC value of the temperature conversion
-    uint16_t C[8]; // Calibration coefficients [1],[2]
     float P;       // Compensated pressure value
     float T;       // Compensated temperature value
-    float dT;    // Difference between actual and measured temperature
+    float dT;      // Difference between actual and measured temperature
     float OFF;     // Offset at actual temperature
     float SENS;    // Sensitivity at actual temperature
 
-    // [1] address 0 contains factory data and the setup.
-    // [2] address 7 contains the serial code and the CRC.
+    send_reset_cmd(); // Reset after power-up
 
-    uint8_t crc;  // CRC value of the PROM
-
-    send_reset_cmd();
-    read_prom_data(C);
-    uart_putu16(C[0]); uart_space();
-    uart_putu16(C[1]); uart_space();
-    uart_putu16(C[2]); uart_space();
-    uart_putu16(C[3]); uart_space();
-    uart_putu16(C[4]); uart_space();
-    uart_putu16(C[5]); uart_space();
-    uart_putu16(C[6]); uart_space();
-    uart_putu16(C[7]); uart_space();
+#undef C1
+#undef C2
+#undef C3
+#undef C4
+#undef C5
+#undef C6
+#define C1 coeff->c[1]
+#define C2 coeff->c[2]
+#define C3 coeff->c[3]
+#define C4 coeff->c[4]
+#define C5 coeff->c[5]
+#define C6 coeff->c[6]
 
     // TODO CRC is not verified
-    crc = calc_crc4(C); // Calculate the CRC
-    D2 = cmd_adc(CMD_ADC_D2 + CMD_ADC_4096); // read D2, temperature value // TODO hard coded 4096 val
-    uart_putu32(D2); uart_space();
-    D1 = cmd_adc(CMD_ADC_D1 + CMD_ADC_4096); // read D1, pressure value
-    uart_putu32(D1); uart_space();
+    uint8_t crc = calc_crc4(coeff->c); // Calculate the CRC of the PROM
+    // uart_putu8(crc); uart_space();
+
+    // Read digital pressure value, D1
+    // TODO hard coded resolution _256
+    D1 = send_adc_cmd(CMD_ADC_D1 + oversampling); // Read D1: pressure value
+    // uart_putu32(D1); uart_space();
+
+    // Read digital temperature value, D2
+    // TODO hard coded resolution _4096
+    D2 = send_adc_cmd(CMD_ADC_D2 + oversampling); // Read D2: temperature value
+    // uart_putu32(D2); uart_space();
+
     if (D2 == 0 || D1 == 0)
         uart_puts_P(" error D1 || D2");
 
     // TODO according data sheet all calculations can be performed with integers
 
     // Calculate compensated temperature
-    dT = D2 - C[5] * 256.f;
-    // T = (2000 + (dT * C6) / 2^23) / 10
-    // T = (2000.f + (dT * C[6]) / pow(2,23)) / 10.f;
-    T = (2000.f + (dT * C[6]) / 8388608.f) / 10.f;
+    // dT = D2 - C5 * 2^8
+    dT = D2 - C5 * 256.f;
 
-    int32_t tu = (int32_t) T;
-    uart_puti32(tu); uart_space();
+    // T = (2000 + (dT * C6) / 2^23) / 10
+    T = (2000.f + (dT * C6) / 8388608.f) / 10.f;
 
     // Calculate temperature compensated pressure
     // OFF = C2 * 2^16 + dT * C4 / 2^7
-    OFF = C[2] * 65536.f + dT * C[4] / 128;
+    OFF = C2 * 65536.f + dT * C4 / 128;
 
     // SENS = C1 * 2^15 + dT * C3 / 2^8
-    SENS = C[1] * 32768.f + dT * C[3] / 256.f;
+    SENS = C1 * 32768.f + dT * C3 / 256.f;
 
     // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
     P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
 
     uint32_t pu = (uint32_t) P;
-    uart_putu32(pu); uart_space();
+    // uart_putu32(pu); uart_space();
+    uint16_t pnn = pressure_calculate_pressure_nn16(pu);
+    // uart_putu16(pnn); uart_space();
 
-    uint16_t bmp085_calculate_pressure_nn16(int32_t p);
-    uint16_t pNN = bmp085_calculate_pressure_nn16(pu);
-    uart_putu16(pNN); uart_space();
-
-
-    // OFF =  C[2] * 131072 + dT * C[4] / 64;             // 2^17 = 131072, 2^6 = 64
-    // SENS = C[1] * 65536  + dT * C[3] / 128;            // 2^16 = 65536,  2^7 = 128
-    // P = (((D1 * SENS) / 2097152 - OFF) / 32768) / 100; // 2^21 = 2097152, 2^15 = 32768
-
-    // ms5611->temperature = T;
-    // ms5611->pressure = P;
+    ms5611->temperature = T;
+    ms5611->pressure = pnn; // P
 }
 
 // EOF

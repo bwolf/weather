@@ -25,6 +25,8 @@
 #include "uart_addons.h"
 #include "twim.h"
 
+#include "pressure.h"
+
 #include "bmp085.h"
 
 
@@ -255,27 +257,27 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, co
     return p;
 }
 
-float bmp085_calculate_altitude(int32_t p)
-{
-    const float p0 = 101325; // Pressure at sea level in Pa
-    return (float) 44330 * (1 - pow(((float) p/p0), 0.190295));
-}
+// float bmp085_calculate_altitude(int32_t p)
+// {
+//     const float p0 = 101325; // Pressure at sea level in Pa
+//     return (float) 44330 * (1 - pow(((float) p/p0), 0.190295));
+// }
 
-// NN is normal null
-uint32_t bmp085_calculate_pressure_nn(int32_t p)
-{
-    // Calculation according to Bosch data sheet
-    return (uint32_t) (((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255));
-}
+// // NN is normal null
+// uint32_t bmp085_calculate_pressure_nn(int32_t p)
+// {
+//     // Calculation according to Bosch data sheet
+//     return (uint32_t) (((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255));
+// }
 
-// NN is normal null, truncate a value like 102464 meaning 1024,64 to 10246 fitting into an uint16_t.
-uint16_t bmp085_calculate_pressure_nn16(int32_t p)
-{
-    // Calculation according to Bosch data sheet, value/10 rounded
-    return (uint16_t) roundf((((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255)) / 10.f);
-}
+// // NN is normal null, truncate a value like 102464 meaning 1024,64 to 10246 fitting into an uint16_t.
+// uint16_t bmp085_calculate_pressure_nn16(int32_t p)
+// {
+//     // Calculation according to Bosch data sheet, value/10 rounded
+//     return (uint16_t) roundf((((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255)) / 10.f);
+// }
 
-void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
+void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085)
 {
     // Read uncompensated temperature value
     uint16_t ut = bmp085_read_ut();
@@ -293,7 +295,7 @@ void bmp085_read(bmp085_t *res, const bmp085_coeff_t * const bmp085)
 
     // Calculate pressure NN
     // res->pressure_nn = bmp085_calculate_pressure_nn(p);
-    res->pressure_nn = bmp085_calculate_pressure_nn16(p);
+    res->pressure_nn = pressure_calculate_pressure_nn16(p); // TODO rename, pressure twice
 }
 
 // EOF

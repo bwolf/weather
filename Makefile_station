@@ -53,6 +53,8 @@ TARGET = station
 SRC = $(TARGET).c uart.c uart_addons.c dbgled.c \
 	adc.c \
 	bmp085.c \
+	ms5611.c \
+        pressure.c \
 	sht11.c twim.c \
 	rain.c \
 	spi.c wl_module.c wl_highlevel.c

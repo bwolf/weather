@@ -8,6 +8,7 @@
 Use a warm up loop after reset to warm up the filter value.
 ** TODO Main timer higher prescaler
 
+** TODO SHT7x Socket Connector
 
 * Electrical characteristics
 

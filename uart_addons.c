@@ -44,7 +44,9 @@ void uart_puti16(int16_t n)
 
 void uart_putu32_kernel(uint32_t n, uint8_t base)
 {
-    char buf[20];
+    // 4294967295
+    // 9876543210
+    char buf[12];
 
     ultoa(n, buf, base);
     uart_puts(buf);

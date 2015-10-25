@@ -16,8 +16,11 @@
 
 #include "adc.h"
 
+#include "spi.h"
+
 #include "twim.h"
 #include "bmp085.h"
+#include "ms5611.h"
 
 #include "sht11.h"
 
@@ -40,7 +43,8 @@ static uint8_t power_down_p(void)
 {
     // nRF24L01+ may be busy during transmission, so don't power down
     // unconditionally.
-    return !wlhl_busy_p();
+    // return !wlhl_busy_p();
+    return 1;
 }
 
 // Power down all subsystems.
@@ -50,13 +54,16 @@ static void subsystems_power_down(void)
     //
     // BMP085 There is no explicit way to power-down the BMP085.
     //
+    // TODO note about MS5611
+    // TODO spi
+    //
     // Disable TWI via TWEN bit. If this bit is written to zero, the
     // TWI is switched off and all TWI transmissions are terminated,
     // regardless of any ongoing operation.
     TWCR &= ~(1 << TWEN);
 
     // nRF24L01+
-    wlhl_power_down();
+    // wlhl_power_down();
 }
 
 // Power up all subsystems
@@ -70,14 +77,17 @@ static void subsystems_power_up(void)
     TWCR |= (1 << TWEN);
 
     // nRF24L01+ powering up takes some ms!
-    wlhl_power_up();
+    // wlhl_power_up();
 }
 
 
-static bmp085_coeff_t bmp085_coeff; // BMP085 EEPROM coefficients for calculation
+static bmp085_coeff_t bmp085_coeff; // BMP085 PROM coefficients
+static ms5611_coeff_t ms5611_coeff; // MS5611 PROM coefficients
 
 // Global variable containing sensor read out to be transmitted wireless
 static payload_t payload;
+
+static ms5611_t ms5611;
 
 static void dowork(void)
 {
@@ -87,39 +97,49 @@ static void dowork(void)
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085    SHT11");
-        uart_putsln_P("dC  P/NN  hC   hH%");
+        uart_putsln_P("BMP085    MS5611    SHT11");
+        uart_putsln_P("dC  P/NN  dC  P/NN  hC   hH%");
         //             231 10246 2333 5036 -- For alignment of the header
     }
 #endif
 
     dbgled_red_on(); // LED enable
 
-    if (wlhl_busy_p()) {
-        // Do nothing, give wireless module time to finish
-        uart_putsln_P("wireless_is_busy");
-    } else {
-        // -- BMP086 / Pressure
-        bmp085_read(&payload.bmp085, &bmp085_coeff);
+    // if (wlhl_busy_p()) {
+    //     // Do nothing, give wireless module time to finish
+    //     uart_putsln_P("wireless_is_busy");
+    // } else {
+    //     // -- BMP086 / Pressure
+    //     bmp085_read(&payload.bmp085, &bmp085_coeff);
 
-        // -- SHT11 / Humidity
-        sht11_init();
-        if (sht11_read(&payload.sht11)) {
-            uart_puts_P("SHT11 ERROR"); // Debug output
-        }
-        sht11_down();
+    //     // -- SHT11 / Humidity
+    //     sht11_init();
+    //     if (sht11_read(&payload.sht11)) {
+    //         uart_puts_P("SHT11 ERROR"); // Debug output
+    //     }
+    //     sht11_down();
 
-        // Debug output
-        uart_puti16(payload.bmp085.decicelsius); uart_space();
-        uart_putu16(payload.bmp085.pressure_nn); uart_space();
-        uart_puti16(payload.sht11.temp); uart_space();
-        uart_puti16(payload.sht11.rh_true);
-        uart_crlf();
+    //     // Debug output
+    //     uart_puti16(payload.bmp085.decicelsius); uart_space();
+    //     uart_putu16(payload.bmp085.pressure_nn); uart_space();
+    //     uart_puti16(payload.sht11.temp); uart_space();
+    //     uart_puti16(payload.sht11.rh_true);
+    //     uart_crlf();
 
-        // Transmit measurements
-        dbgled_green_toggle();
-        wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
-    }
+    //     // Transmit measurements
+    //     dbgled_green_toggle();
+    //     wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
+    // }
+
+    bmp085_read_data(&payload.bmp085, &bmp085_coeff);
+    uart_puti16(payload.bmp085.decicelsius); uart_space();
+    uart_putu16(payload.bmp085.pressure_nn); uart_space();
+
+    ms5611_read_data(&ms5611, &ms5611_coeff, MS5611_OVERSAMPLING_4096);
+    uart_puti16(ms5611.temperature); uart_space();
+    uart_putu16(ms5611.pressure); uart_space();
+
+    uart_crlf();
 
     dbgled_red_off();
 }
@@ -140,6 +160,11 @@ main(void)
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
     dbgled_red_init();
     dbgled_green_init();
+
+    // TODO currently hardcoded in wlhl_tx_init();
+    spi_init();
+    ms5611_init();
+    ms5611_read_calibration_coefficients(&ms5611_coeff);
 
     twi_init();
     bmp085_init(&bmp085_coeff);
@@ -168,11 +193,11 @@ main(void)
 
     sei(); // With interrupts...
 
-    uart_ff();
+    // uart_ff();
 
     // Wireless setup requires interrupts
     _delay_ms(50); // TODO delay required?
-    wlhl_init_tx();
+    // wlhl_init_tx();
 
 #ifdef WITH_POWERDOWN
     uint8_t power_down; // Remember if powered down
