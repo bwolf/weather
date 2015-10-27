@@ -149,88 +149,89 @@ void wlhl_init_rx(uint8_t payload_len)
     wl_module_config_n(payload_len); // config nRF as RX Module, with payload length
     _delay_ms(50);
 
+    // -- Ensure the nRF24L01+ is usable.
+    //
+    // In particular when the MCU is reprogrammed, it may happen that
+    // the nRF24L01+ may be stale in a state where it is unusable.
+    //
+    // Uncomment the uart_ calls to debug issues with the chip.
+    uint8_t r = 0, c = 0;
 
-    // TODO cleanup this mess and how?!!!
-    // ----------------------------------------------------------------------
-    // Debugging of restart problems after ISP
-    {
-        uint8_t r = 0, c = 0;
+    wl_module_read_register(CONFIG, &c, 1);
+    // uart_puts_P("CONFIG      ");
+    // uart_putu8_b(c);
+    // uart_crlf();
 
-        wl_module_read_register(CONFIG, &c, 1);
-        // uart_puts_P("CONFIG      ");
-        // uart_putu8_b(c);
-        // uart_crlf();
+    wl_module_CSN_lo;        // Pull down chip select
+    r = spi_fast_shift(NOP); // Read status register
+    wl_module_CSN_hi;        // Pull up chip select
+    // uart_puts_P("STATUS      ");
+    // uart_putu8_b(r);
+    // uart_crlf();
 
-        wl_module_CSN_lo;        // Pull down chip select
-        r = spi_fast_shift(NOP); // Read status register
-        wl_module_CSN_hi;        // Pull up chip select
-        // uart_puts_P("STATUS      ");
-        // uart_putu8_b(r);
-        // uart_crlf();
+    // Power down chip to prevent receiving packets while
+    // configuring the cicruit.
+    c &= ~(1 << PWR_UP);
+    wl_module_write_register(CONFIG, &c, 1);
+    _delay_ms(5);
 
-        // Power down chip
-        c &= ~(1 << PWR_UP);
-        wl_module_write_register(CONFIG, &c, 1);
-        _delay_ms(5);
-
-        // Clear MAX_RT if asserted
-        if (r & (1 << MAX_RT)) {
-            // uart_putsln_P("Clearing MAX_RT");
-            wl_module_config_register(STATUS, (1 << MAX_RT));
-        }
-
-        // Flush RX
-        if (r & (1 << RX_DR)) {
-            // uart_putsln_P("Flushing RX");
-            wl_module_CSN_lo;         // Pull down chip select
-            spi_fast_shift(FLUSH_RX); // Write cmd to flush tx fifo
-            wl_module_CSN_hi;         // Pull up chip select
-            wl_module_config_register(STATUS, (1 << RX_DR));
-        }
-
-        // Flush TX
-        if (r & (1 << TX_DS) || r & (1 << TX_FULL)) {
-            // uart_putsln_P("Flushing TX");
-            wl_module_CSN_lo;
-            spi_fast_shift(FLUSH_TX);
-            wl_module_CSN_hi;
-            wl_module_config_register(STATUS, (1 << TX_DS));
-        }
-
-        // Power up chip
-        c |= (1 << PWR_UP);
-        wl_module_write_register(CONFIG, &c, 1);
-        _delay_ms(5);
-
-        wl_module_read_register(CONFIG, &c, 1);
-        // uart_puts_P("CONFIG      ");
-        // uart_putu8_b(c);
-        // uart_crlf();
-
-        // wl_module_CSN_lo;        // Pull down chip select
-        // r = spi_fast_shift(NOP); // Read status register
-        // wl_module_CSN_hi;        // Pull up chip select
-        // uart_puts_P("STATUS      ");
-        // uart_putu8_b(r);
-        // uart_crlf();
-
-        wl_module_read_register(EN_RXADDR, &r, 1);
-        // uart_puts_P("EN_RXADDR   ");
-        // uart_putu8_b(r);
-        // uart_crlf();
-
-        // Overwrite EN_RXADDR with default values
-        if (r != ((1 << ERX_P1) | (1 << ERX_P0))) {
-            // uart_putsln_P("Resetting EN_RXADDR");
-            r = (1 << ERX_P1) | (1 << ERX_P0);
-            wl_module_write_register(EN_RXADDR, &r, 1);
-        }
-
-        // wl_module_read_register(FIFO_STATUS, &r, 1);
-        // uart_puts_P("FIFO_STATUS ");
-        // uart_putu8_b(r);
-        // uart_crlf();
+    // Clear MAX_RT if asserted
+    if (r & (1 << MAX_RT)) {
+        // uart_putsln_P("Clearing MAX_RT");
+        wl_module_config_register(STATUS, (1 << MAX_RT));
     }
+
+    // Flush RX
+    if (r & (1 << RX_DR)) {
+        // uart_putsln_P("Flushing RX");
+        wl_module_CSN_lo;         // Pull down chip select
+        (void) spi_fast_shift(FLUSH_RX); // Write cmd to flush tx fifo
+        wl_module_CSN_hi;         // Pull up chip select
+        wl_module_config_register(STATUS, (1 << RX_DR));
+    }
+
+    // Flush TX
+    if (r & (1 << TX_DS) || r & (1 << TX_FULL)) {
+        // uart_putsln_P("Flushing TX");
+        wl_module_CSN_lo;
+        (void) spi_fast_shift(FLUSH_TX);
+        wl_module_CSN_hi;
+        wl_module_config_register(STATUS, (1 << TX_DS));
+    }
+
+    // Power up chip
+    c |= (1 << PWR_UP);
+    wl_module_write_register(CONFIG, &c, 1);
+    _delay_ms(5);
+
+    wl_module_read_register(CONFIG, &c, 1);
+    // uart_puts_P("CONFIG      ");
+    // uart_putu8_b(c);
+    // uart_crlf();
+
+    // wl_module_CSN_lo;        // Pull down chip select
+    // r = spi_fast_shift(NOP); // Read status register
+    // wl_module_CSN_hi;        // Pull up chip select
+    // uart_puts_P("STATUS      ");
+    // uart_putu8_b(r);
+    // uart_crlf();
+
+    wl_module_read_register(EN_RXADDR, &r, 1);
+    // uart_puts_P("EN_RXADDR   ");
+    // uart_putu8_b(r);
+    // uart_crlf();
+
+    // Overwrite EN_RXADDR with default values
+    if (r != ((1 << ERX_P1) | (1 << ERX_P0))) {
+        // uart_putsln_P("Resetting EN_RXADDR");
+        r = (1 << ERX_P1) | (1 << ERX_P0);
+        wl_module_write_register(EN_RXADDR, &r, 1);
+    }
+
+    // wl_module_read_register(FIFO_STATUS, &r, 1);
+    // uart_puts_P("FIFO_STATUS ");
+    // uart_putu8_b(r);
+    // uart_crlf();
 }
 
 uint8_t wlhl_data_ready_p(void)
