@@ -51,10 +51,11 @@ static void subsystems_power_down(void)
 {
     // SHT11 Is always powered-down after sensor reading.
     //
-    // BMP085 There is no explicit way to power-down the BMP085.
+    // BMP085: There is no explicit way to power-down the sensor.
     //
-    // TODO note about MS5611
-    // TODO spi
+    // MS5611: There is no explicit way to power-down the sensor.
+    //
+    // SPI: Don't power down, nRF24L01+ dislikes it.
     //
     // Disable TWI via TWEN bit. If this bit is written to zero, the
     // TWI is switched off and all TWI transmissions are terminated,
@@ -153,7 +154,6 @@ main(void)
     dbgled_red_init();
     dbgled_green_init();
 
-    // TODO currently hardcoded in wlhl_tx_init();
     spi_init();
     ms5611_init();
     ms5611_read_calibration_coefficients(&ms5611_coeff);

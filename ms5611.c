@@ -249,6 +249,17 @@ int8_t ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff)
         return -1;
     }
 
+#ifdef MS5611_PRINT_RAW_VALUES
+    uart_crlf();
+    uart_puts_P("MS5611 raw (coeff/D1/D1) ");
+    for (uint8_t i = 0; i < 8; i++) {
+        uart_putu8(coeff->c[i]); uart_space();
+    }
+    uart_putu32(D1); uart_space();
+    uart_putu32(D2);
+    uart_crlf();
+#endif
+
     // TODO according data sheet all calculations can be performed with integers
 
     // Calculate compensated temperature
@@ -258,51 +269,47 @@ int8_t ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff)
     // T = (2000 + (dT * C6) / 2^23) / 10
     T = (2000.f + (dT * C6) / 8388608.f) / 10.f;
 
-    // TODO only TEMP is needed for 2nd or 3rd conversion sequence!
     // Calculate temperature compensated pressure
     // OFF = C2 * 2^16 + dT * C4 / 2^7
     OFF = C2 * 65536.f + dT * C4 / 128;
 
-    // TODO only TEMP is needed for 2nd or 3rd conversion sequence!
     // SENS = C1 * 2^15 + dT * C3 / 2^8
     SENS = C1 * 32768.f + dT * C3 / 256.f;
 
-    // TODO clean up
+    // Calculate pressure; for just 1st order conversion this would be
+    // enough.
+    // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
+
+    // Second order conversion required at T < 20 degress C
+    if (T < 200.f) {
+        // T2 = dT^2 / 2^31
+        float T2 = dT * dT / 2147483648.f;
+        // OFF2 = 5 * (TEMP – 2000)^2 / 2^1
+        float OFF2 = 5 * pow(T - 2000.f, 2) / 2.f;
+        // SENS2 = 5 * (TEMP – 2000)^2 / 2^2
+        float SENS2 = 5 * pow(T - 2000.f, 2) / 4.f;
+
+        // Third order conversion required at T < - 15 degress C
+        if (T < -150.f) {
+            // OFF2 = OFF2 + 7 * (TEMP + 1500)^2
+            OFF2 = OFF2 + 7.f * pow(T + 1500.f, 2);
+            // SENS2 = SENS2 + 11 * (TEMP + 1500)^2 / 2^1
+            SENS2 = SENS2 + 11 * pow(T + 1500.f, 2) / 2.f;
+        }
+
+        // Adjust TEMP
+        T = T - T2;
+
+        // Adjust OFF and SENS, used for pressure calculation
+        OFF = OFF - OFF2;
+        SENS = SENS - SENS2;
+    }
+
     // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
     P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
 
-    // Second order conversion required at T < 20 degress C
-    // if (T < 200.f) {
-    //     // T2 = dT^2 / 2^31
-    //     float T2 = dT * dT / 2147483648.f;
-    //     // OFF2 = 5 * (TEMP – 2000)^2 / 2^1
-    //     float OFF2 = 5 * pow(T - 2000.f, 2) / 2.f;
-    //     // SENS2 = 5 * (TEMP – 2000)^2 / 2^2
-    //     float SENS2 = 5 * pow(T - 2000.f, 2) / 4.f;
-
-    //     // Third order conversion required at T < - 15 degress C
-    //     if (T < -150.f) {
-    //         // OFF2 = OFF2 + 7 * (TEMP + 1500)^2
-    //         OFF2 = OFF2 + 7.f * pow(T + 1500.f, 2);
-    //         // SENS2 = SENS2 + 11 * (TEMP + 1500)^2 / 2^1
-    //         SENS2 = SENS2 + 11 * pow(T + 1500.f, 2) / 2.f;
-    //     }
-
-    //     T = T - T2;
-    //     OFF = OFF - OFF2;
-    //     SENS = SENS - SENS2;
-    // } else {
-    //     ; // Nothing changed!
-    // }
-
-    // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10;
-    // P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
-
     ms5611->temperature = T;
     ms5611->pressure = pressure_to_nn16((uint32_t) P);
-
-    // TODO snd order conversion
-    // TODO thrd order conversion
 
     return 0;
 }

@@ -10,7 +10,11 @@
 #include "config.h"
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
+
+#include "uart.h"
+#include "uart_addons.h"
 
 #include "sht11.h"
 
@@ -444,6 +448,14 @@ uint8_t sht11_read_data(sht11_t *sht11)
     // NOTE: [1],[2] The initial temperature reading takes longer
     // compared to reading the humidity after the temperature has been
     // read.
+
+#ifdef SHT11_PRINT_RAW_VALUES
+    uart_crlf();
+    uart_puts_P("SHT11 raw (temp/humid) ");
+    uart_puti16(temp); uart_space();
+    uart_puti16(humid);
+    uart_crlf();
+#endif
 
     // Conversion
 #if defined(SHT11_CONVERT_SENSIRION)

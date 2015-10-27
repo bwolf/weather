@@ -11,6 +11,18 @@ Use a warm up loop after reset to warm up the filter value.
 ** TODO SHT7x Socket Connector
 ** TODO Use 32.768 kHz oscillator as main clock?
    Compare current consumption of internal vs. external clock in data sheet.
+** TODO Verify and optimize BMP085 conversion
+   #+BEGIN_EXAMPLE
+     BMP085 raw (coeff/ut/up) 7106 -1261 -14633 34391 25021 17113 5498 69 -32768 -11075 2432 25208 316195
+   #+END_EXAMPLE
+** TODO Verify and optimize MS5611 conversion
+   #+BEGIN_EXAMPLE
+     MS5611 raw (coeff/D1/D1) 216 61 254 44 31 116 96 146 8019928 8424416
+   #+END_EXAMPLE
+** TODO Verify and optimize SHT11 conversion
+   #+BEGIN_EXAMPLE
+     SHT11 raw (temp/humid) 6253 1513
+   #+END_EXAMPLE
 ** TODO Use error handling with SHT11, BMP085, MS5611 in main
 
 * Electrical characteristics

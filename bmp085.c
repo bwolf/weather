@@ -52,34 +52,34 @@
 #undef _MC
 #undef _MD
 
-#define _AC1 (b085->AC1)
-#define _AC2 (b085->AC2)
-#define _AC3 (b085->AC3)
-#define _AC4 (b085->AC4)
-#define _AC5 (b085->AC5)
-#define _AC6 (b085->AC6)
-#define _B1 (b085->B1)
-#define _B2 (b085->B2)
-#define _MB (b085->MB)
-#define _MC (b085->MC)
-#define _MD (b085->MD)
+#define _AC1 (coeff->AC1)
+#define _AC2 (coeff->AC2)
+#define _AC3 (coeff->AC3)
+#define _AC4 (coeff->AC4)
+#define _AC5 (coeff->AC5)
+#define _AC6 (coeff->AC6)
+#define _B1 (coeff->B1)
+#define _B2 (coeff->B2)
+#define _MB (coeff->MB)
+#define _MC (coeff->MC)
+#define _MD (coeff->MD)
 
 
 // Init struct with sane values. Otherwise gcc complains about maybe
 // unitialized members.
-void bmp085_init(bmp085_coeff_t *b085)
+void bmp085_init(bmp085_coeff_t *coeff)
 {
-    b085->AC1 = 0;
-    b085->AC2 = 0;
-    b085->AC3 = 0;
-    b085->AC4 = 0;
-    b085->AC5 = 0;
-    b085->AC6 = 0;
-    b085->B1 = 0;
-    b085->B2 = 0;
-    b085->MB = 0;
-    b085->MC = 0;
-    b085->MD = 0;
+    _AC1 = 0;
+    _AC2 = 0;
+    _AC3 = 0;
+    _AC4 = 0;
+    _AC5 = 0;
+    _AC6 = 0;
+    _B1 = 0;
+    _B2 = 0;
+    _MB = 0;
+    _MC = 0;
+    _MD = 0;
 }
 
 // Reads BMP085 register value as uint16_t
@@ -103,16 +103,13 @@ error:
 }
 
 // Read calibration coefficients from BMP085 eeprom
-void bmp085_read_calibration_coefficients(bmp085_coeff_t *b085)
+void bmp085_read_calibration_coefficients(bmp085_coeff_t *coeff)
 {
 #undef  BMP085_GET_CP
 #define BMP085_GET_CP(prnfn, name, reg_addr)                            \
-    b085->name = bmp085_read_i16(reg_addr);                             \
-    if (b085->name == 0)                                                \
+    coeff->name = bmp085_read_i16(reg_addr);                            \
+    if (coeff->name == 0)                                               \
         goto error
-    // uart_puts_P(#name " ");
-    // prnfn(b085->name);
-    // uart_crlf()
 
     BMP085_GET_CP(uart_puti16, AC1, 0xAA);
     BMP085_GET_CP(uart_puti16, AC2, 0xAC);
@@ -196,7 +193,7 @@ error:
 // Param: ut - uncompensated temperature from BMP085
 // Param: bmp085 - structure with calibration coefficients
 // Return: temperature in deci Celsius
-int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coeff_t * const b085)
+int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coeff_t * const coeff)
 {
     int32_t x1 = (((int32_t) ut - (int32_t) _AC6) * (int32_t) _AC5) >> 15;
     int32_t x2 = ((int32_t) _MC << 11) / (x1 + _MD);
@@ -210,7 +207,8 @@ int16_t bmp085_calculate_temperature(uint16_t ut, int32_t *B5, const bmp085_coef
 // Param: up - uncompensated pressure from BMP085
 // Param: b085 - BMP085 structure with calibration coefficients
 // Return: pressure in pascal (P)
-int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, const bmp085_coeff_t * const b085)
+int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5,
+                                       const bmp085_coeff_t * const coeff)
 {
     int32_t x1, x2, x3, b3, b6, p;
     uint32_t b4, b7;
@@ -244,7 +242,7 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, co
     return p;
 }
 
-void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085)
+void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const coeff)
 {
     // Read uncompensated temperature value
     uint16_t ut = bmp085_read_ut();
@@ -252,13 +250,32 @@ void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085)
     // Read uncompensated pressure value
     uint32_t up = bmp085_read_up();
 
+#ifdef BMP085_PRINT_RAW_VALUES
+    uart_crlf();
+    uart_puts_P("BMP085 raw (coeff/ut/up) ");
+    uart_puti16(_AC1); uart_space();
+    uart_puti16(_AC2); uart_space();
+    uart_puti16(_AC3); uart_space();
+    uart_putu16(_AC4); uart_space();
+    uart_putu16(_AC5); uart_space();
+    uart_putu16(_AC6); uart_space();
+    uart_puti16(_B1); uart_space();
+    uart_puti16(_B2); uart_space();
+    uart_puti16(_MB); uart_space();
+    uart_puti16(_MC); uart_space();
+    uart_puti16(_MD); uart_space();
+    uart_putu16(ut); uart_space();
+    uart_putu32(up);
+    uart_crlf();
+#endif
+
     // Calculate temperature in deci degress C
     int32_t B5;
-    int16_t decicelsius = bmp085_calculate_temperature(ut, &B5, bmp085);
+    int16_t decicelsius = bmp085_calculate_temperature(ut, &B5, coeff);
     res->decicelsius = decicelsius;
 
     // Calculate true pressure
-    int32_t p = bmp085_calculate_true_pressure(up, &B5, bmp085);
+    int32_t p = bmp085_calculate_true_pressure(up, &B5, coeff);
 
     // Calculate pressure NN
     res->pressure_nn = pressure_to_nn16(p);
