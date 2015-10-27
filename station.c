@@ -38,6 +38,62 @@
 #endif
 
 
+// Timer2 in async mode to wake up from sleep mode.
+
+static void timer2_async_init(void)
+{
+    // Use timer/counter2 in async mode to wakeup from power save.
+    // An external resonator with 32.768 kHz is required on TOSC1/TOSC2.
+    ASSR  = (1 << AS2);                  // Drive timer2 asynchronously
+    _delay_ms(1000);                     // Wait until external resonator is stable
+
+#if defined(__AVR_ATmega88__)
+    TCCR2 |= (1 << CS22) | (1 << CS20);  // Prescaler 128
+    while ((ASSR & (1 << TCR2UB)))       // Wait until register access has completed
+        ;
+    TIFR = (1 << TOV2);                  // Clear timer interrupts
+    TIMSK |= (1 << TOIE2);               // Enable timer overflow interrupt
+#elif defined(__AVR_ATmega88PA__)
+    TCCR2B |= (1 << CS22) | (1 << CS20); // Prescaler 128
+    while ((ASSR & (1 << TCR2BUB)))      // Wait until register access has completed
+        ;
+    TIFR2 = (1 << TOV2);                 // Clear timer interrupts
+    TIMSK2 |= (1 << TOIE2);              // Enable timer overflow interrupt
+#else
+# error "Unsupported MCU."
+#endif
+}
+
+static void timer2_async_stabilize_mcu_before_powerdown(void)
+{
+        // IMPORTANT: If Timer2 is used asynchronously to do periodic
+        // wake ups from sleep mode, a sleep of at least one resonator
+        // cycle of Timer2 needs to be performed (~30us), to
+        // reactivate the interrupt logic. Otherwise the MCU will
+        // never be waked. These could be omitted if it has been
+        // ensured that the main loop plus the interrupt logic take
+        // longer than 30us. The following two lines ensure the
+        // minimum time.
+#if defined(__AVR_ATmega88__)
+        OCR2 = 0;                       // Dummy access
+        while ((ASSR & (1<< OCR2UB)))   // Wait until register access has completed
+            ;
+#elif defined(__AVR_ATmega88PA__)
+        OCR2A = 0;                      // Dummy access
+        while ((ASSR & (1 << OCR2BUB))) // Wait until register access has completed
+            ;
+#else
+# error "Unsupported MCU."
+#endif
+}
+
+
+// Power management
+
+#ifdef WITH_POWERDOWN
+static uint8_t power_down = 0; // Remember if powered down
+#endif
+
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
@@ -80,6 +136,29 @@ static void subsystems_power_up(void)
     wlhl_power_up();
 }
 
+// Powerdown all if possible and wake logic.
+static void power_down_doit(void)
+{
+#ifdef WITH_POWERDOWN
+    if (power_down_p()) {
+        // Power-down subsystems
+        subsystems_power_down();
+        // Prepare MCU powerdown
+        set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+        // This power downs the MCU
+        sleep_mode();
+        //
+        // Here we wakeup from sleep mode, after execution of the
+        // timer2 ISR.
+        //
+        // Wait until external resonator is stable
+        _delay_ms(1000);
+        // Power-up subsystems
+        subsystems_power_up();
+    }
+#endif
+}
+
 
 static bmp085_coeff_t bmp085_coeff; // BMP085 PROM coefficients
 static ms5611_coeff_t ms5611_coeff; // MS5611 PROM coefficients
@@ -89,6 +168,8 @@ static payload_t payload;
 
 static void dowork(void)
 {
+    dbgled_red_on(); // Debug
+
 #ifdef WITH_UART
     static uint8_t once = 1;
 
@@ -100,8 +181,6 @@ static void dowork(void)
         //             231 10246 2333 5036 -- For alignment of the header
     }
 #endif
-
-    dbgled_red_on(); // LED enable
 
     if (wlhl_busy_p()) {
         // Do nothing, give wireless module time to finish
@@ -129,8 +208,6 @@ static void dowork(void)
         uart_puti16(payload.sht11.rh_true);
         uart_crlf();
 
-        // Transmit measurements
-        dbgled_green_toggle();
         wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
     }
 
@@ -149,93 +226,35 @@ main(void)
     disable_ad_converter();
     disable_analog_comparator();
 
+    dbgled_red_init();
+
+    // UART
     _delay_ms(100);
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
-    dbgled_red_init();
-    dbgled_green_init();
 
+    // SPI / MS5611
     spi_init();
     ms5611_init();
     ms5611_read_calibration_coefficients(&ms5611_coeff);
 
+    // TWI / BMP085
     twi_init();
     bmp085_init(&bmp085_coeff);
     bmp085_read_calibration_coefficients(&bmp085_coeff);
 
-    // Use timer/counter2 in async mode to wakeup from power save.
-    // An external resonator with 32.768 kHz is required on TOSC1/TOSC2.
-    ASSR  = (1<< AS2);                   // Drive timer2 asynchronously
-    _delay_ms(1000);                     // Wait until external resonator is stable
-
-#if defined(__AVR_ATmega88__)
-    TCCR2 |= (1 << CS22) | (1 << CS20);  // Prescaler 128
-    while ((ASSR & (1 << TCR2UB)))       // Wait until register access has completed
-        ;
-    TIFR = (1 << TOV2);                  // Clear timer interrupts
-    TIMSK |= (1 << TOIE2);               // Enable timer overflow interrupt
-#elif defined(__AVR_ATmega88PA__)
-    TCCR2B |= (1 << CS22) | (1 << CS20); // Prescaler 128
-    while ((ASSR & (1 << TCR2BUB)))      // Wait until register access has completed
-        ;
-    TIFR2 = (1 << TOV2);                 // Clear timer interrupts
-    TIMSK2 |= (1 << TOIE2);              // Enable timer overflow interrupt
-#else
-# error "Unsupported MCU."
-#endif
+    // TIMER2 in asynchronous mode to wake MCU after powerdown
+    timer2_async_init();
 
     sei(); // With interrupts...
 
     // Wireless setup requires interrupts
-    _delay_ms(50); // TODO delay required?
     wlhl_init_tx();
 
-#ifdef WITH_POWERDOWN
-    uint8_t power_down; // Remember if powered down
-#endif
-
     while (1) {
-        // Give outstanding operations time to complete (e.g. UART)
-        _delay_ms(100);
+        _delay_ms(100); // Complete outstanding ops. (e.g. UART)
+        timer2_async_stabilize_mcu_before_powerdown();
+        power_down_doit();
 
-        // IMPORTANT: If Timer2 is used asynchronously to do periodic
-        // wake ups from sleep mode, a sleep of at least one resonator
-        // cycle of Timer2 needs to be performed (~30us), to
-        // reactivate the interrupt logic. Otherwise the MCU will
-        // never be waked. These could be omitted if it has been
-        // ensured that the main loop plus the interrupt logic take
-        // longer than 30us. The following two lines ensure the
-        // minimum time.
-#if defined(__AVR_ATmega88__)
-        OCR2 = 0;                       // Dummy access
-        while ((ASSR & (1<< OCR2UB)))   // Wait until register access has completed
-            ;
-#elif defined(__AVR_ATmega88PA__)
-        OCR2A = 0;                      // Dummy access
-        while ((ASSR & (1 << OCR2BUB))) // Wait until register access has completed
-            ;
-#else
-# error "Unsupported MCU."
-#endif
-
-        if (power_down_p()) {
-#ifdef WITH_POWERDOWN
-            power_down = 1;
-            subsystems_power_down();
-            set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-            sleep_mode(); // This power downs the MCU
-#endif
-        }
-
-        // Here we wakeup from sleep mode, after execution of the
-        // timer2 interrupt
-        _delay_ms(1000); // Wait until external resonator is stable
-
-#ifdef WITH_POWERDOWN
-        if (power_down) {
-            power_down = 0;
-            subsystems_power_up();
-        }
-#endif
         if (dowork_flag) { // Flag is signaled in timer2 interrupt
             dowork_flag = 0;
             dowork();
@@ -252,7 +271,6 @@ ISR(TIMER2_OVF_vect)
         ticks = 0;
         dowork_flag = 1; // Flag main loop to do measurement
     }
-    dbgled_red_off();
 }
 
 // EOF

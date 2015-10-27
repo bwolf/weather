@@ -149,7 +149,7 @@ ISR(RAIN_INTERRUPT_VECT)
         RAINTIMER_START();
         ++count_cup_fills;
 
-        dbgled_red_toggle(); // Debug LED
+        // TODO toggle led for test
     }
 }
 

@@ -92,8 +92,6 @@ ISR(WIRELESS_INTERRUPT_VECT)
 {
     uint8_t status;
 
-    dbgled_green_toggle(); // TODO remove
-
     //  Read wl_module status
     wl_module_CSN_lo;             //  Pull down chip select
     status = spi_fast_shift(NOP); //  Read status register
@@ -266,7 +264,6 @@ ISR(WIRELESS_INTERRUPT_VECT)
 
     // IRQ: Package has been received
     if (status & (1 << RX_DR)) {
-        dbgled_red_on(); // TODO remove debug led
         wl_module_config_register(STATUS, (1 << RX_DR)); // Clear interrupt bit
         // Set flag to indicate main loop that data is ready
         rx_data_ready = 1;
