@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <math.h>
 
-float pressure_calculate_altitude(int32_t p)
+float pressure_to_altitude(int32_t p)
 {
     // TODO most of this is constant
     const float p0 = 101325; // Pressure at sea level in Pa
@@ -13,7 +13,7 @@ float pressure_calculate_altitude(int32_t p)
 }
 
 // NN is normal null
-uint32_t pressure_calculate_pressure_nn(int32_t p)
+uint32_t pressure_to_nn(int32_t p)
 {
     // Calculation according to Bosch data sheet
     // TODO most of this is constant
@@ -21,7 +21,7 @@ uint32_t pressure_calculate_pressure_nn(int32_t p)
 }
 
 // NN is normal null, truncate a value like 102464 meaning 1024,64 to 10246 fitting into an uint16_t.
-uint16_t pressure_calculate_pressure_nn16(int32_t p)
+uint16_t pressure_to_nn16(int32_t p)
 {
     // Calculation according to Bosch data sheet, value/10 rounded
     // TODO most of this is constant

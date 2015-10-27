@@ -9,6 +9,9 @@ Use a warm up loop after reset to warm up the filter value.
 ** TODO Main timer higher prescaler
 
 ** TODO SHT7x Socket Connector
+** TODO Use 32.768 kHz oscillator as main clock?
+   Compare current consumption of internal vs. external clock in data sheet.
+** TODO Use error handling with SHT11, BMP085, MS5611 in main
 
 * Electrical characteristics
 

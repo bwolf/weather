@@ -17,7 +17,42 @@
 #include "ms5611.h"
 
 
-// SPI interface
+// Inidication for read from ADC what we read
+typedef enum { ADC_READ_PRESSURE, ADC_READ_TEMPERATURE } e_adc_read_kind_t;
+
+
+// Delays for pressure, temperature according oversampling value.
+
+#if (MS5611_OVERSAMPLING_PRESSURE == MS5611_OVERSAMPLING_256)
+# define OVERSAMPLING_PRESSURE_DELAY_MS 1
+#elif (MS5611_OVERSAMPLING_PRESSURE == MS5611_OVERSAMPLING_512)
+# define OVERSAMPLING_PRESSURE_DELAY_MS 3
+#elif (MS5611_OVERSAMPLING_PRESSURE == MS5611_OVERSAMPLING_1024)
+# define OVERSAMPLING_PRESSURE_DELAY_MS 4
+#elif (MS5611_OVERSAMPLING_PRESSURE == MS5611_OVERSAMPLING_2048)
+# define OVERSAMPLING_PRESSURE_DELAY_MS 6
+#elif (MS5611_OVERSAMPLING_PRESSURE == MS5611_OVERSAMPLING_4096)
+# define OVERSAMPLING_PRESSURE_DELAY_MS 10
+#else
+# error "Unhandled case according specification/pressure."
+#endif
+
+#if (MS5611_OVERSAMPLING_TEMPERATURE == MS5611_OVERSAMPLING_256)
+# define OVERSAMPLING_TEMPERATURE_DELAY_MS 1
+#elif (MS5611_OVERSAMPLING_TEMPERATURE == MS5611_OVERSAMPLING_512)
+# define OVERSAMPLING_TEMPERATURE_DELAY_MS 3
+#elif (MS5611_OVERSAMPLING_TEMPERATURE == MS5611_OVERSAMPLING_1024)
+# define OVERSAMPLING_TEMPERATURE_DELAY_MS 4
+#elif (MS5611_OVERSAMPLING_TEMPERATURE == MS5611_OVERSAMPLING_2048)
+# define OVERSAMPLING_TEMPERATURE_DELAY_MS 6
+#elif (MS5611_OVERSAMPLING_TEMPERATURE == MS5611_OVERSAMPLING_4096)
+# define OVERSAMPLING_TEMPERATURE_DELAY_MS 10
+#else
+# error "Unhandled case according specification/temperature."
+#endif
+
+
+// SPI interface for MS5611
 
 #define CMD_RESET    0x1E // ADC reset command
 #define CMD_ADC_READ 0x00 // ADC read command
@@ -60,7 +95,7 @@ static void send_reset_cmd(void)
  *
  * @return 24bit result
  */
-static uint32_t send_adc_cmd(uint8_t cmd)
+static uint32_t send_adc_cmd(uint8_t cmd, e_adc_read_kind_t read_kind)
 {
     uint16_t ret;
     uint32_t temp = 0;
@@ -68,13 +103,14 @@ static uint32_t send_adc_cmd(uint8_t cmd)
     csb_lo();                                // Pull CSB low
     (void) spi_fast_shift(CMD_ADC_CONV+cmd); // Send conversion command
 
-    switch (cmd & 0x0f) {                    // Wait necessary conversion time
-    case CMD_ADC_256 : _delay_us(900); break;
-    case CMD_ADC_512 : _delay_ms(3);   break;
-    case CMD_ADC_1024: _delay_ms(4);   break;
-    case CMD_ADC_2048: _delay_ms(6);   break;
-    case CMD_ADC_4096: _delay_ms(10);  break;
-    default:                           break;
+    // Delay according spec.
+    switch (read_kind) {
+    case ADC_READ_PRESSURE:    _delay_ms(OVERSAMPLING_PRESSURE_DELAY_MS);
+        break;
+    case ADC_READ_TEMPERATURE: _delay_ms(OVERSAMPLING_TEMPERATURE_DELAY_MS);
+        break;
+    default:
+        break;
     }
 
     csb_hi();                            // Pull CSB high to finish the conversion
@@ -170,8 +206,8 @@ void ms5611_read_calibration_coefficients(ms5611_coeff_t *coeff)
  *
  * @param coeff Calibration coefficients read from PROM.
  */
-void ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff, // TODO const for coeff would be nice
-                      enum ms5611_oversampling oversampling)
+// TODO const for coeff would be nice                        )
+int8_t ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff)
 {
     uint32_t D1;   // ADC value of the pressure conversion
     uint32_t D2;   // ADC value of the temperature conversion
@@ -196,22 +232,21 @@ void ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff, // TODO const for
 #define C5 coeff->c[5]
 #define C6 coeff->c[6]
 
-    // TODO CRC is not verified
-    uint8_t crc = calc_crc4(coeff->c); // Calculate the CRC of the PROM
-    // uart_putu8(crc); uart_space();
+    // Calculate the CRC of the PROM, stored with 4 bits at prom[7] in LSB.
+    if (calc_crc4(coeff->c) != (coeff->c[7] & 0x000F)) {
+        uart_putsln_P("Error: ms5611/crc");
+        return -1;
+    }
 
     // Read digital pressure value, D1
-    // TODO hard coded resolution _256
-    D1 = send_adc_cmd(CMD_ADC_D1 + oversampling); // Read D1: pressure value
-    // uart_putu32(D1); uart_space();
+    D1 = send_adc_cmd(CMD_ADC_D1 + MS5611_OVERSAMPLING_PRESSURE, ADC_READ_PRESSURE);
 
     // Read digital temperature value, D2
-    // TODO hard coded resolution _4096
-    D2 = send_adc_cmd(CMD_ADC_D2 + oversampling); // Read D2: temperature value
-    // uart_putu32(D2); uart_space();
+    D2 = send_adc_cmd(CMD_ADC_D2 + MS5611_OVERSAMPLING_TEMPERATURE, ADC_READ_TEMPERATURE);
 
     if (D2 == 0 || D1 == 0) {
         uart_puts_P(" error D1 || D2");
+        return -1;
     }
 
     // TODO according data sheet all calculations can be performed with integers
@@ -223,23 +258,53 @@ void ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff, // TODO const for
     // T = (2000 + (dT * C6) / 2^23) / 10
     T = (2000.f + (dT * C6) / 8388608.f) / 10.f;
 
+    // TODO only TEMP is needed for 2nd or 3rd conversion sequence!
     // Calculate temperature compensated pressure
     // OFF = C2 * 2^16 + dT * C4 / 2^7
     OFF = C2 * 65536.f + dT * C4 / 128;
 
+    // TODO only TEMP is needed for 2nd or 3rd conversion sequence!
     // SENS = C1 * 2^15 + dT * C3 / 2^8
     SENS = C1 * 32768.f + dT * C3 / 256.f;
 
+    // TODO clean up
     // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
     P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
 
-    uint32_t pu = (uint32_t) P;
-    // uart_putu32(pu); uart_space();
-    uint16_t pnn = pressure_calculate_pressure_nn16(pu);
-    // uart_putu16(pnn); uart_space();
+    // Second order conversion required at T < 20 degress C
+    // if (T < 200.f) {
+    //     // T2 = dT^2 / 2^31
+    //     float T2 = dT * dT / 2147483648.f;
+    //     // OFF2 = 5 * (TEMP – 2000)^2 / 2^1
+    //     float OFF2 = 5 * pow(T - 2000.f, 2) / 2.f;
+    //     // SENS2 = 5 * (TEMP – 2000)^2 / 2^2
+    //     float SENS2 = 5 * pow(T - 2000.f, 2) / 4.f;
+
+    //     // Third order conversion required at T < - 15 degress C
+    //     if (T < -150.f) {
+    //         // OFF2 = OFF2 + 7 * (TEMP + 1500)^2
+    //         OFF2 = OFF2 + 7.f * pow(T + 1500.f, 2);
+    //         // SENS2 = SENS2 + 11 * (TEMP + 1500)^2 / 2^1
+    //         SENS2 = SENS2 + 11 * pow(T + 1500.f, 2) / 2.f;
+    //     }
+
+    //     T = T - T2;
+    //     OFF = OFF - OFF2;
+    //     SENS = SENS - SENS2;
+    // } else {
+    //     ; // Nothing changed!
+    // }
+
+    // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10;
+    // P = (((D1 * SENS) / 2097152.f - OFF) / 32768.f) / 10.f;
 
     ms5611->temperature = T;
-    ms5611->pressure = pnn; // P
+    ms5611->pressure = pressure_to_nn16((uint32_t) P);
+
+    // TODO snd order conversion
+    // TODO thrd order conversion
+
+    return 0;
 }
 
 // EOF

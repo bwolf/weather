@@ -57,19 +57,17 @@
 
 
 // --- MS5611 configuration (temperature/pressure)
-//#include "ms5611_confdefs.h"
+#include "ms5611_confdefs.h"
 #define MS5611_CSB_DDR     DDRD
 #define MS5611_CSB_PORT    PORTD
 #define MS5611_CSB_PORT_NO PD7
+#define MS5611_OVERSAMPLING_PRESSURE    MS5611_OVERSAMPLING_1024
+#define MS5611_OVERSAMPLING_TEMPERATURE MS5611_OVERSAMPLING_256
 
 
 // --- BMP085 configuration (temperature/pressure)
 #include "bmp085_confdefs.h"
 #define BMP085_OVERSAMPLING_VALUE BMP085_OVERSAMPLING_ULTRA_HIGH_RESOLUTION
-// TODO obsolete?
-#define BMP085_ALTITUDE_SENSOR ALTITUDE_SENSOR_LOCATION
-#undef  WITHOUT_BMP085_CALC_PRESSURE_NN
-#undef  BMP085_WITH_UART_ERROR_MSGS
 
 
 // --- SHT11 configuration (temperature/humidity)

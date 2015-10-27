@@ -30,10 +30,6 @@
 #include "bmp085.h"
 
 
-#ifndef BMP085_ALTITUDE_SENSOR
-# error "Missing definition BMP085_ALTITUDE_SENSOR."
-#endif
-
 #ifndef BMP085_OVERSAMPLING_VALUE
 # error "Missing definition BMP085_OVERSAMPLING_VALUE."
 #endif
@@ -102,9 +98,7 @@ static int16_t bmp085_read_i16(uint8_t reg)
     return (int16_t) msb << 8 | lsb;
 
 error:
-#ifdef BMP085_WITH_UART_ERROR_MSGS
     uart_putsln_P("Error bmp085_read_u16");
-#endif
     return 0;
 }
 
@@ -134,13 +128,10 @@ void bmp085_read_calibration_coefficients(bmp085_coeff_t *b085)
 
     // Get rid of local macro
 #undef BMP085_GET_CP
-
     return;
 
 error:
-#ifdef BMP085_WITH_UART_ERROR_MSGS
     uart_putsln_P("Error bmp085_read_calibration_coefficients");
-#endif
     return;
 }
 
@@ -159,9 +150,7 @@ uint16_t bmp085_read_ut(void)
     return bmp085_read_i16(0xF6);
 
 error:
-#ifdef BMP085_WITH_UART_ERROR_MSGS
     uart_putsln_P("Error bmp085_read_ut");
-#endif
     return 0;
 }
 
@@ -199,9 +188,7 @@ uint32_t bmp085_read_up(void)
     return (((uint32_t) msb << 16) | ((uint32_t) lsb << 8) | (uint32_t) xlsb) >> (8 - BMP085_OVERSAMPLING_VALUE);
 
 error:
-#ifdef BMP085_WITH_UART_ERROR_MSGS
     uart_putsln_P("Error bmp085_read_up");
-#endif
     return 0;
 }
 
@@ -257,26 +244,6 @@ int32_t bmp085_calculate_true_pressure(uint32_t up, const int32_t * const B5, co
     return p;
 }
 
-// float bmp085_calculate_altitude(int32_t p)
-// {
-//     const float p0 = 101325; // Pressure at sea level in Pa
-//     return (float) 44330 * (1 - pow(((float) p/p0), 0.190295));
-// }
-
-// // NN is normal null
-// uint32_t bmp085_calculate_pressure_nn(int32_t p)
-// {
-//     // Calculation according to Bosch data sheet
-//     return (uint32_t) (((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255));
-// }
-
-// // NN is normal null, truncate a value like 102464 meaning 1024,64 to 10246 fitting into an uint16_t.
-// uint16_t bmp085_calculate_pressure_nn16(int32_t p)
-// {
-//     // Calculation according to Bosch data sheet, value/10 rounded
-//     return (uint16_t) roundf((((float) p) / pow((float)1 - ((float) BMP085_ALTITUDE_SENSOR / (float) 44330), (float) 5.255)) / 10.f);
-// }
-
 void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085)
 {
     // Read uncompensated temperature value
@@ -294,8 +261,7 @@ void bmp085_read_data(bmp085_t *res, const bmp085_coeff_t * const bmp085)
     int32_t p = bmp085_calculate_true_pressure(up, &B5, bmp085);
 
     // Calculate pressure NN
-    // res->pressure_nn = bmp085_calculate_pressure_nn(p);
-    res->pressure_nn = pressure_calculate_pressure_nn16(p); // TODO rename, pressure twice
+    res->pressure_nn = pressure_to_nn16(p);
 }
 
 // EOF
