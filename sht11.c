@@ -363,7 +363,7 @@ void sth11_convert_sensirion_all_in_one(float *p_humidity, float *p_temperature)
     rh_lin = C3*rh*rh + C2*rh + C1;       // calc. humidity from ticks to [%RH]
     rh_true = (t_C-25)*(T1+T2*rh)+rh_lin; // calc. temperature compensated humidity [%RH]
 
-    if (rh_true > 100) rh_true = 100; // cut if the value is outside of
+    if (rh_true > 99)  rh_true = 100; // cut if the value is outside of
     if (rh_true < 0.1) rh_true = 0.1; // the physical possible range
 
     *p_temperature = t_C;
