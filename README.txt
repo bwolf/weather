@@ -2,6 +2,11 @@
 #+AUTHOR: Marcus Geiger
 
 * Open points/Todos
+** TODO Strange data
+#+BEGIN_EXAMPLE
+  75 10124 38 1013 657 8916
+  75 10124 38 1013 651 8915
+#+END_EXAMPLE
 ** TODO Finish rain sensor code
 ** TODO Clean up wireless high level code 
 ** TODO Integrate IIR filter
