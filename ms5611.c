@@ -278,10 +278,13 @@ int8_t ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff)
 
     // Calculate pressure; for just 1st order conversion this would be
     // enough.
+    //
     // P = (((D1 * SENS) / 2^21 - OFF) / 2^15) / 10.f;
-
+    //
     // Second order conversion required at T < 20 degress C
     if (T < 200.f) {
+        uart_putsln_P("ms5611: 2nd order"); // TODO debug
+
         // T2 = dT^2 / 2^31
         float T2 = dT * dT / 2147483648.f;
         // OFF2 = 5 * (TEMP – 2000)^2 / 2^1
@@ -291,6 +294,8 @@ int8_t ms5611_read_data(ms5611_t *ms5611, ms5611_coeff_t *coeff)
 
         // Third order conversion required at T < - 15 degress C
         if (T < -150.f) {
+            uart_putsln_P("ms5611: 3rd order"); // TODO debug
+
             // OFF2 = OFF2 + 7 * (TEMP + 1500)^2
             OFF2 = OFF2 + 7.f * pow(T + 1500.f, 2);
             // SENS2 = SENS2 + 11 * (TEMP + 1500)^2 / 2^1
