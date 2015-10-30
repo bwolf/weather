@@ -116,7 +116,7 @@ void rain_init(void)
     // Configure input PIN for IRQ
     // TODO ensure that now pull-up/pull-down is required (short cicruit)
     RAIN_DDR &= ~(1 << RAIN_DDR_NO);   // input
-    RAIN_PORT &= ~(1 << RAIN_PORT_NO); // disable pull-up
+    RAIN_PORT &= ~(1 << RAIN_PORT_NO); // disable pull-up TODO really?
 
     // Configure IRQ
     RAIN_INTERRUPT_FALLING_EDGE();
