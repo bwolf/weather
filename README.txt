@@ -10,6 +10,7 @@
 ** TODO Strange data
    Data from 28.10.2015 at 08:30.
    #+BEGIN_EXAMPLE
+     BMP085   MS5611  SHT11
      75 10124 38 1013 657 8916
      75 10124 38 1013 651 8915
    #+END_EXAMPLE
