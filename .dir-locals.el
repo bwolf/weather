@@ -1,8 +1,7 @@
 ;;; Directory Local Variables
 ;;; For more information see (info "(emacs) Directory Variables")
 
-((nil . ((indent-tabs-mode . nil)))
- (c-mode . ((eval . (progn
+((c-mode . ((eval . (progn
                       (semantic-mode -1)
                       (message "Disabled semantic-mode via .dir-locals.el")
                       (setq flycheck-checker 'c/c++-gcc

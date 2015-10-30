@@ -1,4 +1,4 @@
-# Hey Emacs, this is a -*- makefile-gmake -*-
+# Hey Emacs, this is a -*- makefile -*-
 #
 # WinAVR makefile written by Eric B. Weddington, Jörg Wunsch, et al.
 # Released to the Public Domain
