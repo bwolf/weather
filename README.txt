@@ -89,8 +89,15 @@
    #+END_EXAMPLE
 
 ** TODO Verify and optimize MS5611 conversion
+
+   Raw values:
    #+BEGIN_EXAMPLE
-     MS5611 raw (coeff/D1/D1) 216 61 254 44 31 116 96 146 8019928 8424416
+     MS5611 raw (coeff/D1/D1) 216 61 254 44 31 116 96 146 8064280 8414176
+   #+END_EXAMPLE
+
+   Output:
+   #+BEGIN_EXAMPLE
+     241 1029   
    #+END_EXAMPLE
 
 ** TODO Verify and optimize SHT11 conversion
