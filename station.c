@@ -236,6 +236,9 @@ main(void)
     // Wireless setup requires interrupts
     wlhl_init_tx();
 
+    // Station ID needs to be unique
+    payload.station_id = 1;
+
     while (1) {
         _delay_ms(100); // Complete outstanding ops. (e.g. UART)
         timer2_async_stabilize_mcu_before_powerdown();
