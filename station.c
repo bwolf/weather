@@ -20,7 +20,6 @@
 
 #include "twim.h"
 #include "bmp085.h"
-#include "ms5611.h"
 
 #include "sht11.h"
 
@@ -90,10 +89,6 @@ static void timer2_async_stabilize_mcu_before_powerdown(void)
 
 // Power management
 
-#ifdef WITH_POWERDOWN
-static uint8_t power_down = 0; // Remember if powered down
-#endif
-
 // Predicate to check if power down is possible by checking subsystems.
 static uint8_t power_down_p(void)
 {
@@ -161,7 +156,6 @@ static void power_down_doit(void)
 
 
 static bmp085_coeff_t bmp085_coeff; // BMP085 PROM coefficients
-static ms5611_coeff_t ms5611_coeff; // MS5611 PROM coefficients
 
 // Global variable containing sensor read out to be transmitted wireless
 static payload_t payload;
@@ -176,9 +170,8 @@ static void dowork(void)
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085    MS5611    SHT11");
-        uart_putsln_P("dC  P/NN  dC  P/NN  hC   hH%");
-        //             231 10246 2333 5036 -- For alignment of the header
+        uart_putsln_P("BMP085    SHT11");
+        uart_putsln_P("dC  P/NN  hC   hH%");
     }
 #endif
 
@@ -188,9 +181,6 @@ static void dowork(void)
     } else {
         // -- BMP086 / Pressure
         bmp085_read_data(&payload.bmp085, &bmp085_coeff);
-
-        // -- MS5611 / Pressure
-        ms5611_read_data(&payload.ms5611, &ms5611_coeff);
 
         // -- SHT11 / Humidity
         sht11_init();
@@ -202,8 +192,6 @@ static void dowork(void)
         // Debug output
         uart_puti16(payload.bmp085.decicelsius); uart_space();
         uart_putu16(payload.bmp085.pressure_nn); uart_space();
-        uart_puti16(payload.ms5611.temperature); uart_space();
-        uart_putu16(payload.ms5611.pressure); uart_space();
         uart_puti16(payload.sht11.temp); uart_space();
         uart_puti16(payload.sht11.rh_true);
         uart_crlf();
@@ -232,10 +220,8 @@ main(void)
     _delay_ms(100);
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 
-    // SPI / MS5611
+    // SPI
     spi_init();
-    ms5611_init();
-    ms5611_read_calibration_coefficients(&ms5611_coeff);
 
     // TWI / BMP085
     twi_init();

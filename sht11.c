@@ -477,7 +477,7 @@ uint8_t sht11_read_data(sht11_t *sht11)
 #endif
 
 #ifdef SHT11_WITH_RAW_SENSOR_VALUES
-# warning "Compiling with raw SHT11 sensor values. Use this only for debug."
+# warning "Compiling with raw SHT11 sensor values. Use only for debugging."
     sht11->raw_temp = temp;
     sht11->raw_humi = humid;
 #endif

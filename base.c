@@ -18,7 +18,6 @@
 
 #define BMP085_DATA_TYPE_ONLY
 #include "bmp085.h"
-#include "ms5611.h"
 #define SHT11_DATA_TYPE_ONLY
 #include "sht11.h"
 #include "payload.h"
@@ -33,19 +32,25 @@ static void get_payload_and_do_work(void)
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085     MS5611  SHT11");
-        uart_putsln_P("d/C P/NN  d/C P/NN h/C  h/H%");
-        //             231 10165 233 1020
+        uart_putsln_P("BMP085    SHT11");
+        uart_puts_P(  "d/C P/NN  h/C  h/H%");
+#ifdef SHT11_WITH_RAW_SENSOR_VALUES
+        uart_puts_P(" rawT rawH");
+#endif
+        uart_crlf();
     }
 
     wlhl_get_data((uint8_t *) &payload, sizeof(payload));
 
     uart_puti16(payload.bmp085.decicelsius); uart_space();
     uart_putu16(payload.bmp085.pressure_nn); uart_space();
-    uart_puti16(payload.ms5611.temperature); uart_space();
-    uart_putu16(payload.ms5611.pressure);    uart_space();
     uart_puti16(payload.sht11.temp);         uart_space();
     uart_puti16(payload.sht11.rh_true);
+#ifdef SHT11_WITH_RAW_SENSOR_VALUES
+    uart_space();
+    uart_puti16(payload.sht11.raw_temp); uart_space();
+    uart_puti16(payload.sht11.raw_humi);
+#endif
     uart_crlf();
 }
 

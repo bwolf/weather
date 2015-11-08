@@ -10,8 +10,8 @@
 
 // --- Features
 #undef  WITHOUT_UART
-#undef  WITHOUT_DBGLED_RED
-#undef  WITHOUT_DBGLED_RED_TOGGLE
+#define WITHOUT_DBGLED_RED
+#define WITHOUT_DBGLED_RED_TOGGLE
 #define WITHOUT_DBGLED_GREEN
 #define WITHOUT_DBGLED_GREEN_TOGGLE
 #define WITHOUT_POWERDOWN
@@ -79,5 +79,10 @@
 
 // Wireless highlevel abstraction
 #define WL_HIGHLEVEL_MODE_RX
+
+
+// General configuration
+
+#undef SHT11_WITH_RAW_SENSOR_VALUES
 
 #endif // CONFIG_H

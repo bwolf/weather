@@ -45,29 +45,26 @@
 #define DBGLED_GREEN_PORT_PIN PB1
 
 
-// --- SPI/SCL clock in Hz for TWI/I2C
-#define SCL_CLOCK 10000UL
+// --- SPI configuration
+#define SCL_CLOCK   10000UL // SPI/SCL clock in Hz for TWI/I2C
+#define SPI_PORT    PORTB
+#define SPI_DDR     DDRB
+#define SPI_DD_MISO DDB4
+#define SPI_DD_MOSI DDB3
+#define SPI_DD_SS   DDB2
+#define SPI_DD_SCK  DDB5
 
 
 // --- Altitude at sensor location
 #define ALTITUDE_MUNICH      519
 #define ALTITUDE_HOLZKIRCHEN 691
-
 #define ALTITUDE_SENSOR_LOCATION ALTITUDE_HOLZKIRCHEN
-
-
-// --- MS5611 configuration (temperature/pressure)
-#include "ms5611_confdefs.h"
-#define MS5611_CSB_DDR     DDRD
-#define MS5611_CSB_PORT    PORTD
-#define MS5611_CSB_PORT_NO PD7
-#define MS5611_OVERSAMPLING_PRESSURE    MS5611_OVERSAMPLING_1024
-#define MS5611_OVERSAMPLING_TEMPERATURE MS5611_OVERSAMPLING_256
 
 
 // --- BMP085 configuration (temperature/pressure)
 #include "bmp085_confdefs.h"
 #define BMP085_OVERSAMPLING_VALUE BMP085_OVERSAMPLING_ULTRA_HIGH_RESOLUTION
+#undef  BMP085_PRINT_RAW_VALUES
 
 
 // --- SHT11 configuration (temperature/humidity)
@@ -132,15 +129,6 @@
 #define RAIN_INTERRUPT_ENABLE() (RAIN_INTERRUPT_MASK_REG = (1 << INT1))
 // Name of the interrupt vector
 #define RAIN_INTERRUPT_VECT INT1_vect
-
-
-// --- SPI configuration
-#define SPI_PORT    PORTB
-#define SPI_DDR     DDRB
-#define SPI_DD_MISO DDB4
-#define SPI_DD_MOSI DDB3
-#define SPI_DD_SS   DDB2
-#define SPI_DD_SCK  DDB5
 
 
 // --- nRF24L01+ configuration
