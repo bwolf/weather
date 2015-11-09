@@ -2,22 +2,19 @@
 #+AUTHOR: Marcus Geiger
 
 * Open points/Todos
+** TODO Kaputt-Gefused oder neu bestellen ATMEGA88-PA-PU?
+#+BEGIN_EXAMPLE
+  avrdude -p m88p -c usbasp -B5 -U lfuse:w:0x65:m -U hfuse:w:0xdf:m -U efuse:w:0xf9:m
+#+END_EXAMPLE
+
 ** TODO ATmega88PA supports pin toggle natively
 #+BEGIN_SRC c
   PINB |= (1 << PINB1); // toggle the I/O port output pin
 #+END_SRC
 
-** TODO Strange data
-   Data from 28.10.2015 at 08:30.
-   #+BEGIN_EXAMPLE
-     BMP085   MS5611  SHT11
-     75 10124 38 1013 657 8916
-     75 10124 38 1013 651 8915
-   #+END_EXAMPLE
-
 ** TODO Finish rain sensor code
 ** TODO Clean up wireless high level code 
-** TODO Integrate IIR filter
+** TODO Integrate IIR filter?
    Use a warm up loop after reset to warm up the filter value.
    #+BEGIN_SRC c
      #include <stdint.h>
@@ -77,27 +74,12 @@
 #+END_SRC
 
 ** TODO Main timer higher prescaler
-
 ** TODO SHT7x Socket Connector
-
 ** TODO Use 32.768 kHz oscillator as main clock?
    Compare current consumption of internal vs. external clock in data sheet.
-
 ** TODO Verify and optimize BMP085 conversion
    #+BEGIN_EXAMPLE
      BMP085 raw (coeff/ut/up) 7106 -1261 -14633 34391 25021 17113 5498 69 -32768 -11075 2432 25208 316195
-   #+END_EXAMPLE
-
-** TODO Verify and optimize MS5611 conversion
-
-   Raw values:
-   #+BEGIN_EXAMPLE
-     MS5611 raw (coeff/D1/D1) 216 61 254 44 31 116 96 146 8064280 8414176
-   #+END_EXAMPLE
-
-   Output:
-   #+BEGIN_EXAMPLE
-     241 1029   
    #+END_EXAMPLE
 
 ** TODO Verify and optimize SHT11 conversion
@@ -105,8 +87,7 @@
      SHT11 raw (temp/humid) 6253 1513
    #+END_EXAMPLE
 
-** TODO Use error handling with SHT11, BMP085, MS5611 in main
-
+** TODO Use error handling with SHT11, BMP085 in main
 
 * Electrical characteristics
 
