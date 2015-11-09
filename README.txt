@@ -89,6 +89,48 @@
 
 ** TODO Use error handling with SHT11, BMP085 in main
 
+
+* SHT11 Conversion (FP)
+** Original Conversion
+C_1 = -2.0468
+
+C_2 = +0.0367
+
+C_3 = -0.0000015955
+
+T_1 = +0.01
+
+T_2 = +0.00008
+
+t_c    = t*D_2 + D_1
+
+rh_lin  = C_3*rh^2 + C_2*rh + C_1
+
+rh_true = (t_c - 25) * (T_1 + T_2*rh) + rh_lin
+
+\to rh_true = (t_C - 25) * (T_1 + T_2*rh) + C_3*rh^2 + C_2*rh + C_1
+
+
+** FP approach first term C_3*rh
+
+For $C_3*rh$ with $rh=2474$, $C_3=-0.0000015955$, is $C_3*rh = 2474*C_3 = 0.003947267$.
+
+It is $-1,5955_{}^{-6} \equiv -15955^{-10} \equiv -15955 / 1{-10}$.
+
+With 1^{-10} \approx 2^{-33}, yields that -1,5955^{-6} * 2^33 \approx 13.705,2406 \approx 13705 (rounded).
+
+\begin{equation}
+\to (rh*13705) / 2^33 \equiv (rh*13705) \gg 33
+\end{equation}
+
+\begin{equation}
+\to (2474*13705) \gg 33 = 0.0039471977
+\end{equation}
+
+Der Fehler für die Version mit Festkomma-Arithmetik findet sich an
+siebter Stelle.
+
+
 * Electrical characteristics
 
 |               | U min | U Max | I min/µA | I max/mA |
