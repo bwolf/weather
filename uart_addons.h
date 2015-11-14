@@ -22,7 +22,7 @@ static inline void uart_putu32(uint32_t n) { uart_putu32_kernel(n, 10); }
 static inline void uart_putu32_x(uint32_t n) { uart_putu32_kernel(n, 16); }
 void uart_puti32(int32_t n);
 
-static void uart_crlf(void) { uart_puts_P("\r\n"); }
+static inline void uart_crlf(void) { uart_puts_P("\r\n"); }
 static inline void uart_ff(void) { uart_putc(0x0C); }
 static inline void uart_space(void) { uart_putc(0x20); }
 

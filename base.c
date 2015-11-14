@@ -23,6 +23,21 @@
 #include "payload.h"
 
 
+// UART helpers
+
+static uint8_t comment_count = 0;
+
+#define uart_comment(text)                              \
+    uart_puts_P("# ");                                  \
+    uart_putu8(comment_count++);                        \
+    uart_space();                                       \
+    uart_putsln_P(text)
+
+#define uart_colon() uart_puts_P(", ")
+
+
+// Business logic
+
 static payload_t payload;
 
 static void get_payload_and_do_work(void)
@@ -32,29 +47,32 @@ static void get_payload_and_do_work(void)
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085    SHT11");
-        uart_puts_P(  "d/C P/NN  h/C  h/H%");
-#ifdef SHT11_WITH_RAW_SENSOR_VALUES
-        uart_puts_P(" rawT rawH");
-#endif
-        uart_crlf();
+        uart_comment("BMP085    SHT11");
+        uart_comment(  "d/C P/NN  h/C  h/H%");
     }
 
     wlhl_get_data((uint8_t *) &payload, sizeof(payload));
 
-    uart_puti16(payload.bmp085.decicelsius); uart_space();
-    uart_putu16(payload.bmp085.pressure_nn); uart_space();
-    uart_puti16(payload.sht11.temp);         uart_space();
+    // JSON output to UART: { "weather": { ... } }
+    uart_puts_P("{ \"weather\": { ");
+    uart_puts_P("\"station-id\": ");
+    uart_putu8(payload.station_id);
+    uart_colon();
+    uart_puts_P("\"temp_m\": ");
+    uart_puti16(payload.sht11.temp);
+    uart_colon();
+    uart_puts_P("\"rh-true_m\": ");
     uart_puti16(payload.sht11.rh_true);
-#ifdef SHT11_WITH_RAW_SENSOR_VALUES
-    uart_space();
-    uart_puti16(payload.sht11.raw_temp); uart_space();
-    uart_puti16(payload.sht11.raw_humi);
-#endif
+    uart_colon();
+    uart_puts_P("\"pressure-nn_c\": ");
+    uart_putu16(payload.bmp085.pressure_nn);
+    uart_puts_P(" } }");
     uart_crlf();
 }
 
 
+// Main entry point
+
 int __attribute__((OS_main))
 main(void)
 {
@@ -70,15 +88,15 @@ main(void)
     sei(); // activate Interrupts
 
     wlhl_init_rx(sizeof(payload));
-
-    uart_putsln_P("Receive loop");
+    uart_comment("Receive loop");
     while (1) {
         while (!wlhl_data_ready_p()) {
-            _delay_ms(10);
+            _delay_ms(500);
         }
 
+        uart_comment("Got one");
+        dbgled_red_toggle();
         get_payload_and_do_work();
-        dbgled_red_off();
     }
 }
 

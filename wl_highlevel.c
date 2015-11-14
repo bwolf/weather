@@ -4,8 +4,6 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include "dbgled.h"
-
 #include "spi.h"
 
 #include "wl_module.h"
