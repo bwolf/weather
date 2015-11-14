@@ -1,0 +1,198 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Written for Python 2.7
+
+
+import sys, os.path, getopt, serial, json, logging, logging.handlers
+from StringIO import StringIO
+from logging import Logger
+
+def readlineCR(port):
+    buf = ''
+    while True:
+        ch = port.read()
+        # Serial returns '' on timeout
+        if ch == '':
+            continue
+        buf += ch
+        if len(buf) > 0 and buf.endswith("\r\n"):
+            return buf
+
+class MetricSystem(object):
+
+    prefix_to_base10 = {
+        "Y": 10e24,
+        "Z": 10e21,
+        "E": 10e18,
+        "P": 10e15,
+        "T": 10e12,
+        "G": 10e9,
+        "M": 10e6,
+        "k": 10e3,
+        "h": 10e2,
+        "da": 10e1,
+        "": 1,
+        "d": 10e-1,
+        "c": 10e-2,
+        "m": 10e-3,
+        "µ": 10e-6,
+        "n": 10e-9,
+        "p": 10e-12,
+        "f": 10e-15,
+        "a": 10e-18,
+        "z": 10e-21,
+        "y": 10e-14
+    }
+
+    @classmethod
+    def scale_by_prefix(cls, prefix, value):
+        if not prefix in MetricSystem.prefix_to_base10:
+            raise KeyError('Unknown metric symbol prefix %s' % prefix)
+        scale = MetricSystem.prefix_to_base10[prefix]
+        return float(value) * scale
+
+class MySysLogHandler(logging.handlers.SysLogHandler):
+    """
+    Syslog logging handler which prefixes each log message with an ident string.
+    Basically identical to it's base class besides the ident.
+    """
+
+    def __init__(self, ident):
+        super(MySysLogHandler, self).__init__() # Python 2.7
+        # logging.handlers.SysLogHandler.__init__(self) # Python 3.x
+        self._ident = ident
+
+    def emit(self, record):
+        record.ident = self._ident
+        logging.handlers.SysLogHandler.emit(self, record)
+
+
+def configure_log(ident, filename, stream=None):
+    # Logging setup, root logger with loglevel DEBUG
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    # File with given name
+    filehandler = logging.FileHandler(filename)
+    fileformatter = logging.Formatter('%(asctime)s %(process)d ' +
+                                      ident + ' - %(name)s - %(levelname)s - %(message)s')
+    filehandler.setFormatter(fileformatter)
+    root.addHandler(filehandler)
+
+    # Syslog with a severity >= warning
+    sysloghandler = MySysLogHandler(ident)
+    sysloghandler.setLevel(logging.WARNING)
+    # NOTE: do we really need levelname here?
+    sysloghandler.formatter = logging.Formatter(fmt="%(ident)s %(levelname)s %(name)s: %(message)s")
+    root.addHandler(sysloghandler)
+
+    # Console handler, optional
+    if stream:
+        streamhandler = logging.StreamHandler(stream)
+        streamhandler.setFormatter(fileformatter)
+        root.addHandler(streamhandler)
+
+class WeatherProcessor(object):
+
+    def __init__(self):
+        self.log = logging.getLogger(self.__class__.__name__)
+
+    def process_input(self, raw_input):
+        try:
+            fp = StringIO(raw_input)
+            self.log.debug("Attempt to parse '%s' as json" % raw_input)
+            js = json.load(fp)
+            self.log.debug("Valid: %s" % str(js))
+            self.json_consumer(js)
+        except (ValueError, TypeError) as e:
+            self.log.error("Invalid JSON %s", e)
+
+    def normalize_value(self, key, value):
+        index = key.rfind('_')
+        if index == -1: # identity
+            self.log.debug("Nothing to normalize for key %s" % key)
+            return (key, value)
+        metric_prefix = key[index+1:]
+        newkey = key[0:index]
+        res = MetricSystem.scale_by_prefix(metric_prefix, value)
+        rounded = round(res, 2)
+        return (newkey, rounded)
+
+    def transform_weather(self, js):
+        res = {}
+        for k in js.keys():
+            kk, vv = self.normalize_value(k, js[k])
+            res[kk] = vv
+        return res
+
+    def json_consumer(self, js):
+        if "weather" in js:
+            w = self.transform_weather(js["weather"])
+            # TODO do something with weather data
+            self.log.info("Transformed %s" % w)
+
+def print_usage(ident):
+    """Print program usage to stderr."""
+    print >>sys.stderr, """
+Usage: {0} [-hv] [-d device] [-b rate]
+
+-h --help        Show this help
+-v --verbose     Verbose processing, logging to console
+-d --device fn   Use serial deivce 'fn' instead of /dev/ttyAMA0
+-b --baud rate   Use baud 'rate' instead of 4800
+
+""".format(ident)
+
+def main():
+    """Main entry point."""
+    ident =  os.path.basename(os.path.splitext(sys.argv[0])[0])
+
+    try:
+        options, _ = getopt.getopt(sys.argv[1:], "hd:vb:", ["help", "device=", "baud="])
+    except getopt.GetoptError as err:
+        print >>sys.stderr, str(err)
+        print_usage(ident)
+        sys.exit(2)
+
+    device = "/dev/ttyAMA0"
+    baud = 4800
+    verbose = False
+    for opt, arg in options:
+        if opt in ('-h', '--help'):
+            print_usage(ident)
+            sys.exit()
+        elif opt in ('-d', '--device'):
+            device = arg
+        elif opt in ('-b', '--baud'):
+            baud = arg
+        elif opt in ('-v', '--verbose'):
+            verbose = True
+        else:
+            print >>sys.stderr, 'Unsupported option:', opt
+            print_usage(ident)
+            sys.exit(2)
+
+    # Configure logging
+    mystream = None
+    if verbose:
+        mystream = sys.stdout
+    configure_log(ident, ident + '.log', stream=mystream)
+
+    # Start serial communication
+    ser = serial.Serial(device, baudrate=baud, timeout=120)
+    try:
+        weather_processor = WeatherProcessor()
+        while True:
+            line = readlineCR(ser)
+            line = line.rstrip()
+            #logging.Logger.debug(line)
+            if not line.startswith("# "):
+                weather_processor.process_input(line)
+    except KeyboardInterrupt:
+        pass
+
+    ser.close()
+
+if __name__ == '__main__':
+    main()
