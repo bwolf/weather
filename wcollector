@@ -8,6 +8,8 @@ import sys, os.path, getopt, serial, json, logging, logging.handlers
 from StringIO import StringIO
 from logging import Logger
 
+import httplib, urllib
+
 def readlineCR(port):
     buf = ''
     while True:
@@ -95,8 +97,9 @@ def configure_log(ident, filename, stream=None):
 
 class WeatherProcessor(object):
 
-    def __init__(self):
+    def __init__(self, database):
         self.log = logging.getLogger(self.__class__.__name__)
+        self._database = database
 
     def process_input(self, raw_input):
         try:
@@ -129,8 +132,34 @@ class WeatherProcessor(object):
     def json_consumer(self, js):
         if "weather" in js:
             w = self.transform_weather(js["weather"])
-            # TODO do something with weather data
             self.log.info("Transformed %s" % w)
+            station_id = w['station-id'] # TODO if missing => error
+            for k in w.keys():
+                if k != "station-id":
+                    v = w[k]
+                    k = k.replace("-", "_")
+                    self._database.store_value(station_id, k, v)
+
+class Influxdb(object):
+
+    def __init__(self, host, port, db):
+        self.log = logging.getLogger(self.__class__.__name__)
+        self._host = host # localhost
+        self._port = port # 8086
+        self._db = db
+
+    def store_value(self, station_id, key, value):
+        body = "%s,station=%s value=%f" % (key, station_id, value)
+        self.log.debug("Will store tuple %s" % body)
+        conn = httplib.HTTPConnection("%s:%d" % (self._host, self._port))
+        #conn.set_debuglevel(666)
+        headers = {"Accept": "*/*"}
+        request = conn.request("POST", "/write?db=%s" % self._db, body, headers)
+        response = conn.getresponse()
+        # print response.reason
+        data = response.read()
+        # print data
+
 
 def print_usage(ident):
     """Print program usage to stderr."""
@@ -182,7 +211,8 @@ def main():
     # Start serial communication
     ser = serial.Serial(device, baudrate=baud, timeout=120)
     try:
-        weather_processor = WeatherProcessor()
+        influxdb = Influxdb("localhost", 8086, "weather")
+        weather_processor = WeatherProcessor(influxdb)
         while True:
             line = readlineCR(ser)
             line = line.rstrip()
