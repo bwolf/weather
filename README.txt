@@ -149,6 +149,14 @@ siebter Stelle.
 3) Needs 3.3V at max, also for input signals (i.e. MCU signals)
 
 
+* Influxdb
+** Port-Forward for webui
+   #+BEGIN_SRC sh
+     ssh -L 8080:192.168.177.25:8083 -L 8086:192.168.177.25:8086 erlkampi2.local
+   #+END_SRC
+
+Then connect to [[http://127.0.0.1:8080/]] the admin interface.
+
 * COMMENT Footer
 # Local Variables:
 # mode: org
