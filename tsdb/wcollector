@@ -111,13 +111,6 @@ class WeatherProcessor(object):
         except (ValueError, TypeError) as e:
             self.log.error("Invalid JSON %s", e)
 
-    def convert(self, conversion, value):
-        if conversion == "int":
-            self.log.debug("Converting value %f by rounding and cast to int" % value)
-            return int(math.floor(value + 0.5))
-        else:
-            return value
-
     def normalize_value(self, key, value):
         index = key.rfind('_')
         if index == -1: # identity
@@ -139,12 +132,6 @@ class WeatherProcessor(object):
 
     def json_consumer(self, js):
         if "weather" in js:
-            # TODO remove this mokey patching, instead do this in base.c?
-            # if "pressure-nn_n" in js["weather"]:
-            #     w = js["weather"]
-            #     val = w["pressure-nn_c"]
-            #     del w["pressure-nn_c"]
-            #     w["pressure-nn_c:int"] = val
             w = self.transform_weather(js["weather"])
             self.log.info("Transformed %s" % w)
             station_id = w['station-id'] # TODO if missing => error
