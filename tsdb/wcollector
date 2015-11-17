@@ -111,6 +111,15 @@ class WeatherProcessor(object):
         except (ValueError, TypeError) as e:
             self.log.error("Invalid JSON %s", e)
 
+    def dew_point(self, h, t):
+        m = 17.62
+        Tn = 243.12
+        if t <= 0:
+            m = 22.46
+            Tn = 272.62
+        k = (math.log10(h) - 2) / 0.4343 + (m * t) / (Tn + t)
+        return Tn * k / (m - k);
+
     def normalize_value(self, key, value):
         index = key.rfind('_')
         if index == -1: # identity
@@ -134,7 +143,18 @@ class WeatherProcessor(object):
         if "weather" in js:
             w = self.transform_weather(js["weather"])
             self.log.info("Transformed %s" % w)
-            station_id = w['station-id'] # TODO if missing => error
+            if not 'station-id' in w:
+                self.log.error("Ignoring dataset because of missing 'station-id': %s" % w)
+                return
+
+            # Patch dew point into dataset
+            if 'rh-true' in w and 'temp' in w:
+                (h, t) = w['rh-true'], w['temp']
+                dp = round(self.dew_point(h, t), 2)
+                self.log.debug('Dewpoint from h %f, %f: %f' % (h, t, dp))
+                w['dew-point'] = dp
+
+            station_id = w['station-id']
             for k in w.keys():
                 if k != "station-id":
                     v = w[k]
@@ -151,7 +171,7 @@ class Influxdb(object):
 
     def store_value(self, station_id, key, value):
         body = "%s,station=%s value=%f" % (key, station_id, value)
-        self.log.debug("Will store tuple %s" % body)
+        self.log.debug("Will store %s" % body)
         conn = httplib.HTTPConnection("%s:%d" % (self._host, self._port))
         #conn.set_debuglevel(666)
         headers = {"Accept": "*/*"}
