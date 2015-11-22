@@ -9,7 +9,7 @@
 
 
 // --- Features
-#undef  WITHOUT_UART
+#define WITHOUT_UART
 #define WITHOUT_DBGLED_RED
 #define WITHOUT_DBGLED_RED_TOGGLE
 #define WITHOUT_DBGLED_GREEN
@@ -124,9 +124,9 @@
 // Name of the timer overflow interrupt vector
 #define RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT TIMER0_OVF_vect
 // Set external interrupt on falling edge for INT1
-#define RAIN_INTERRUPT_FALLING_EDGE() (RAIN_INTERRUPT_CONTROL_REG = (1 << ISC11))
+#define RAIN_INTERRUPT_FALLING_EDGE() (RAIN_INTERRUPT_CONTROL_REG |= (1 << ISC11) | (0 << ISC10))
 // Activate external interrupt INT1
-#define RAIN_INTERRUPT_ENABLE() (RAIN_INTERRUPT_MASK_REG = (1 << INT1))
+#define RAIN_INTERRUPT_ENABLE() (RAIN_INTERRUPT_MASK_REG |= (1 << INT1))
 // Name of the interrupt vector
 #define RAIN_INTERRUPT_VECT INT1_vect
 
@@ -148,9 +148,9 @@
 #endif
 
 // Set external interrupt on falling edge for INT0
-#define WIRELESS_INTERRUPT_FALLING_EDGE() (WIRELESS_INTERRUPT_CONTROL_REG = (1 << ISC01) | (0 << ISC00))
+#define WIRELESS_INTERRUPT_FALLING_EDGE() (WIRELESS_INTERRUPT_CONTROL_REG |= (1 << ISC01) | (0 << ISC00))
 // Activate external interrupt INT0
-#define WIRELESS_INTERRUPT_ENABLE() (WIRELESS_INTERRUPT_MASK_REG = (1 << INT0))
+#define WIRELESS_INTERRUPT_ENABLE() (WIRELESS_INTERRUPT_MASK_REG |= (1 << INT0))
 // Name of the interrupt vector
 #define WIRELESS_INTERRUPT_VECT INT0_vect
 

@@ -38,8 +38,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "dbgled.h"
-
 
 #ifndef RAIN_DDR
 # error "Missing definition RAIN_DDR."
@@ -89,8 +87,8 @@
 #define RAINTIMER_VALUE_OFF   0
 #define RAINTIMER_VALUE_START 1
 
-// Delay value 500ms for timer interrupt
-#define RAINTIMER_VALUE_CUTOFF 30 // TODO abstraction in config.h needed
+// Delay value for timer interrupt, note this time the mcu cannot sleep!
+#define RAINTIMER_VALUE_CUTOFF 10 // TODO abstraction in config.h needed
 
 static volatile uint8_t raintimer = RAINTIMER_VALUE_OFF;
 static volatile uint8_t count_cup_fills = 0;
@@ -111,16 +109,20 @@ void rain_init(void)
     // Configure a timer/counter to de-bounce the signal.
     RAIN_DEBOUNCE_TIMER_OFF();
     RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_ENABLE();
-    RAIN_DEBOUNCE_TIMER_START(); // TODO
+    RAIN_DEBOUNCE_TIMER_START(); // TODO what?
 
     // Configure input PIN for IRQ
-    // TODO ensure that now pull-up/pull-down is required (short cicruit)
-    RAIN_DDR &= ~(1 << RAIN_DDR_NO);   // input
-    RAIN_PORT &= ~(1 << RAIN_PORT_NO); // disable pull-up TODO really?
+    RAIN_DDR &= ~(1 << RAIN_DDR_NO);   // Input
+    RAIN_PORT &= ~(1 << RAIN_PORT_NO); // Disable internal Pull-Up
 
     // Configure IRQ
     RAIN_INTERRUPT_FALLING_EDGE();
     RAIN_INTERRUPT_ENABLE();
+}
+
+uint8_t rain_cupfill_count(void)
+{
+    return count_cup_fills;
 }
 
 uint8_t rain_busy_p(void)
@@ -145,11 +147,12 @@ ISR(RAIN_DEBOUNCE_TIMER_OVERFLOW_INTERRUPT_VECT)
 
 ISR(RAIN_INTERRUPT_VECT)
 {
+    // dbgled_red_on();
+
+
     if (!RAINTIMER_RUNNING_P()) {
         RAINTIMER_START();
         ++count_cup_fills;
-
-        // TODO toggle led for test
     }
 }
 

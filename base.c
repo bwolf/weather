@@ -54,20 +54,27 @@ static void get_payload_and_do_work(void)
     wlhl_get_data((uint8_t *) &payload, sizeof(payload));
 
     // JSON output to UART: { "weather": { ... } }
+    if (payload.layout == 1) {
     uart_puts_P("{ \"weather\": { ");
     uart_puts_P("\"station-id\": ");
     uart_putu8(payload.station_id);
     uart_colon();
     uart_puts_P("\"temp_m\": ");
-    uart_puti16(payload.sht11.temp);
+    uart_puti16(payload.data.layout1.sht11.temp);
     uart_colon();
     uart_puts_P("\"rh-true_m\": ");
-    uart_puti16(payload.sht11.rh_true);
+    uart_puti16(payload.data.layout1.sht11.rh_true);
     uart_colon();
     uart_puts_P("\"pressure-nn_c\": ");
-    uart_putu16(payload.bmp085.pressure_nn);
+    uart_putu16(payload.data.layout1.bmp085.pressure_nn);
+    uart_colon();
+    uart_puts_P("\"rain-cupfills\": ");
+    uart_putu8(payload.data.layout1.rain_cupfills);
     uart_puts_P(" } }");
     uart_crlf();
+    } else {
+        uart_comment("Unsupported payload layout");
+    }
 }
 
 

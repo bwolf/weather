@@ -23,6 +23,8 @@
 
 #include "sht11.h"
 
+#include "rain.h"
+
 #include "wl_highlevel.h"
 
 #include "payload.h"
@@ -94,7 +96,17 @@ static uint8_t power_down_p(void)
 {
     // nRF24L01+ may be busy during transmission, so don't power down
     // unconditionally.
-    return !wlhl_busy_p();
+    // TODO return !wlhl_busy_p()
+    if (wlhl_busy_p()) {
+        return 0;
+    }
+
+    // Rain timer maybe running, so don't power down unconditionally.
+    if (rain_busy_p()) {
+        return 0;
+    }
+
+    return 1;
 }
 
 // Power down all subsystems.
@@ -162,16 +174,14 @@ static payload_t payload;
 
 static void dowork(void)
 {
-    dbgled_red_on(); // Debug
-
 #ifdef WITH_UART
     static uint8_t once = 1;
 
     // Debug output
     if (once) {
         once = !once;
-        uart_putsln_P("BMP085    SHT11");
-        uart_putsln_P("dC  P/NN  hC   hH%");
+        uart_putsln_P("BMP085    SHT11     Rain");
+        uart_putsln_P("dC  P/NN  hC   hH%  #");
     }
 #endif
 
@@ -180,26 +190,28 @@ static void dowork(void)
         uart_putsln_P("wireless_is_busy");
     } else {
         // -- BMP086 / Pressure
-        bmp085_read_data(&payload.bmp085, &bmp085_coeff);
+        bmp085_read_data(&payload.data.layout1.bmp085, &bmp085_coeff);
 
         // -- SHT11 / Humidity
         sht11_init();
-        if (sht11_read_data(&payload.sht11)) {
+        if (sht11_read_data(&payload.data.layout1.sht11)) {
             uart_puts_P("SHT11 ERROR"); // Debug output
         }
         sht11_down();
 
+        // -- Rain
+        payload.data.layout1.rain_cupfills = rain_cupfill_count();
+
         // Debug output
-        uart_puti16(payload.bmp085.decicelsius); uart_space();
-        uart_putu16(payload.bmp085.pressure_nn); uart_space();
-        uart_puti16(payload.sht11.temp); uart_space();
-        uart_puti16(payload.sht11.rh_true);
+        uart_puti16(payload.data.layout1.bmp085.decicelsius); uart_space();
+        uart_putu16(payload.data.layout1.bmp085.pressure_nn); uart_space();
+        uart_puti16(payload.data.layout1.sht11.temp); uart_space();
+        uart_puti16(payload.data.layout1.sht11.rh_true); uart_space();
+        uart_putu8(payload.data.layout1.rain_cupfills);
         uart_crlf();
 
         wlhl_send_payload((uint8_t *) &payload, sizeof(payload));
     }
-
-    dbgled_red_off();
 }
 
 
@@ -233,16 +245,22 @@ main(void)
 
     sei(); // With interrupts...
 
+    // Rain
+    rain_init();
+
     // Wireless setup requires interrupts
     wlhl_init_tx();
 
     // Station ID needs to be unique
     payload.station_id = 1;
+    payload.layout = 1;
 
     while (1) {
         _delay_ms(100); // Complete outstanding ops. (e.g. UART)
         timer2_async_stabilize_mcu_before_powerdown();
         power_down_doit();
+
+        rain_periodic();
 
         if (dowork_flag) { // Flag is signaled in timer2 interrupt
             dowork_flag = 0;
