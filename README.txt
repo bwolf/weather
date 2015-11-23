@@ -87,6 +87,8 @@
      SHT11 raw (temp/humid) 6253 1513
    #+END_EXAMPLE
 
+** TODO Rainsensor use CTC?
+** TODO Rainsensor use 0.2mm in base.c for output
 ** TODO Use error handling with SHT11, BMP085 in main
 
 
