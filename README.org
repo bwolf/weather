@@ -9,9 +9,10 @@ Currently missing is the hardware schematic and PCB design which will
 be added later. It exists at the moment only on bread boards.
 
 The base received all measurements from the stations and gathers them.
-These data will be written as JSON to the UART. Currently a
-Raspberry PI is connected to the base UART, where a seperate program
-parses the JSON data and stores it into a time series database.
+These data will be written as JSON to the UART. Currently a Raspberry
+PI is connected to the base UART, where a seperate program
+([[https://github.com/bwolf/weather-collector]]) parses the JSON data and
+stores it into a time series database.
 
 * Open points/Todos
 ** TODO ATmega88PA supports pin toggle natively
