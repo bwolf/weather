@@ -36,20 +36,6 @@ station variants. Building is simply performed by =make=.
 To program the µC use =make program= (a in-circuit programmer is
 required, e.g. [[http://www.fischl.de/usbasp/][USBasp]]).
 
-* Open points / TODO
-** TODO ATmega88PA supports pin toggle natively
-#+BEGIN_SRC c
-  PINB |= (1 << PINB1); // toggle the I/O port output pin
-#+END_SRC
-
-** TODO Clean up wireless high level code 
-** TODO Main timer needs higher prescaler
-** TODO Order SHT7x Socket Connector
-** TODO Use CTC mode for rainsensor coding
-** TODO Use 0.2mm in base for rainsensor output
-** TODO Use error handling with SHT11, BMP085 in main
-
-
 * Electrical characteristics
 |               | U min | U Max | I min/µA | I max/mA |
 |---------------+-------+-------+----------+----------|

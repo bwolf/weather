@@ -1,0 +1,31 @@
+* Open points / TODO
+
+** TODO ATmega88PA supports pin toggle natively
+   Simplify existing LED logic which historically (simpler MCU) cannot
+   benefit from PIN toggles.
+   #+BEGIN_SRC c
+     PINB |= (1 << PINB1); // toggle the I/O port output pin
+   #+END_SRC
+
+** TODO Clean up wireless high level code 
+   Contains many cases to bring a running nRF24L01+ into sane state
+   after MCU reset which is not needed any more.
+
+** TODO Main timer needs higher prescaler
+   Measurements currently occur too often. Use a different prescaler
+   to reduce the measurement interval to e.g. one minute. It could be
+   further reduced to e.g. 5 minutes or 15 minutes since the data
+   does not change that often.
+
+** TODO Order SHT7x Socket Connector
+   Order socket connector since the SHT7x should not be soldiered or
+   surface mounted.
+
+** TODO Use CTC mode for rainsensor coding
+   Optimization
+
+** TODO Use 0.2mm in base for rainsensor output
+   Rain sensor needs complete overhaul
+
+** TODO Use error handling with SHT11, BMP085 in main
+   Nice to have
