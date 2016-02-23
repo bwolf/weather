@@ -14,9 +14,7 @@ PI is connected to the base UART, where a seperate program
 ([[https://github.com/bwolf/weather-collector]]) parses the JSON data and
 stores it into a time series database.
 
-
-[[#+CAPTION: Sample screenshot of last 6 hours via Grafana
-./grafana1.png]]
+[[./grafana1.png]]
 
 * Open points/Todos
 ** TODO ATmega88PA supports pin toggle natively
