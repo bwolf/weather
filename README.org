@@ -1,22 +1,42 @@
 * Introduction
 This is the source code for a weather station where multiple stations
-send wirelessly their data to a dedicated base. The hardware design is
-based around the Atmel ATmega88PA, Bosch BMP085, Sensirion SHT75x and
-a Davis rain measurement unit. Data transmission is done with the
-nRF24L01+.
+send their data via wireless transmission to a dedicated base. The
+hardware design is based around the Atmel ATmega88PA, Bosch BMP085,
+Sensirion SHT75x and a Davis rain measurement unit. Data transmission
+is done with the nRF24L01+.
 
 Currently missing is the hardware schematic and PCB design which will
 be added later. It exists at the moment only on bread boards.
 
-The base received all measurements from the stations and gathers them.
+One of the design goals of the hardware is running ultra low power. It
+would be nice if the battery of a station would last for at least six
+months. The goal has been reached at the time of this writing with one
+Panasonic 18650 protected cell.
+
+The base receives all measurements from the stations and gathers them.
 These data will be written as JSON to the UART. Currently a Raspberry
-PI is connected to the base UART, where a seperate program
+PI is connected to the base UART, where a separate collector program
 ([[https://github.com/bwolf/weather-collector]]) parses the JSON data and
-stores it into a time series database.
+stores it into a time series database. In fact the collector
+normalizes the data (e.g. transform mC into plain C) and enhances it
+by calculating the dew point and sun rise and set based on the
+geographic location.
 
 [[./grafana1.png]]
 
-* Open points/Todos
+* Building
+Build either the base or the station by running:
+#+BEGIN_SRC sh
+./config base # or station
+#+END_SRC
+
+Now =config.h= and =Makefile= are symlinked to either the base or
+station variants. Building is simply performed by =make=.
+
+To program the µC use =make program= (a in-circuit programmer is
+required, e.g. [[http://www.fischl.de/usbasp/][USBasp]]).
+
+* Open points / TODO
 ** TODO ATmega88PA supports pin toggle natively
 #+BEGIN_SRC c
   PINB |= (1 << PINB1); // toggle the I/O port output pin
@@ -26,8 +46,9 @@ stores it into a time series database.
 ** TODO Main timer needs higher prescaler
 ** TODO Order SHT7x Socket Connector
 ** TODO Use CTC mode for rainsensor coding
-** TODO Use 0.2mm in basec. for rainsensor output
+** TODO Use 0.2mm in base for rainsensor output
 ** TODO Use error handling with SHT11, BMP085 in main
+
 
 * Electrical characteristics
 |               | U min | U Max | I min/µA | I max/mA |
