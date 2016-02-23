@@ -1,18 +1,11 @@
-#+TITLE: README
-#+AUTHOR: Marcus Geiger
+
 
 * Open points/Todos
-** TODO Kaputt-Gefused oder neu bestellen ATMEGA88-PA-PU?
-#+BEGIN_EXAMPLE
-  avrdude -p m88p -c usbasp -B5 -U lfuse:w:0x65:m -U hfuse:w:0xdf:m -U efuse:w:0xf9:m
-#+END_EXAMPLE
-
 ** TODO ATmega88PA supports pin toggle natively
 #+BEGIN_SRC c
   PINB |= (1 << PINB1); // toggle the I/O port output pin
 #+END_SRC
 
-** DONE Finish rain sensor code
 ** TODO Clean up wireless high level code 
 ** TODO Integrate IIR filter?
    Use a warm up loop after reset to warm up the filter value.
@@ -77,60 +70,9 @@
 ** TODO SHT7x Socket Connector
 ** TODO Use 32.768 kHz oscillator as main clock?
    Compare current consumption of internal vs. external clock in data sheet.
-** DONE Verify and optimize BMP085 conversion
-   #+BEGIN_EXAMPLE
-     BMP085 raw (coeff/ut/up) 7106 -1261 -14633 34391 25021 17113 5498 69 -32768 -11075 2432 25208 316195
-   #+END_EXAMPLE
-
-** DONE Verify and optimize SHT11 conversion
-   #+BEGIN_EXAMPLE
-     SHT11 raw (temp/humid) 6253 1513
-   #+END_EXAMPLE
-
 ** TODO Rainsensor use CTC?
 ** TODO Rainsensor use 0.2mm in base.c for output
 ** TODO Use error handling with SHT11, BMP085 in main
-
-
-* SHT11 Conversion (FP)
-** Original Conversion
-C_1 = -2.0468
-
-C_2 = +0.0367
-
-C_3 = -0.0000015955
-
-T_1 = +0.01
-
-T_2 = +0.00008
-
-t_c    = t*D_2 + D_1
-
-rh_lin  = C_3*rh^2 + C_2*rh + C_1
-
-rh_true = (t_c - 25) * (T_1 + T_2*rh) + rh_lin
-
-\to rh_true = (t_C - 25) * (T_1 + T_2*rh) + C_3*rh^2 + C_2*rh + C_1
-
-
-** FP approach first term C_3*rh
-
-For $C_3*rh$ with $rh=2474$, $C_3=-0.0000015955$, is $C_3*rh = 2474*C_3 = 0.003947267$.
-
-It is $-1,5955_{}^{-6} \equiv -15955^{-10} \equiv -15955 / 1{-10}$.
-
-With 1^{-10} \approx 2^{-33}, yields that -1,5955^{-6} * 2^33 \approx 13.705,2406 \approx 13705 (rounded).
-
-\begin{equation}
-\to (rh*13705) / 2^33 \equiv (rh*13705) \gg 33
-\end{equation}
-
-\begin{equation}
-\to (2474*13705) \gg 33 = 0.0039471977
-\end{equation}
-
-Der Fehler für die Version mit Festkomma-Arithmetik findet sich an
-siebter Stelle.
 
 
 * Electrical characteristics
@@ -149,17 +91,3 @@ siebter Stelle.
    drive the asynchronous timer to wake the MCU.
 2) Needs voltage compensation, i.e. fixed power supply required
 3) Needs 3.3V at max, also for input signals (i.e. MCU signals)
-
-
-* Influxdb
-** Port-Forward for webui
-   #+BEGIN_SRC sh
-     ssh -L 8080:192.168.177.25:8083 -L 8086:192.168.177.25:8086 erlkampi2.local
-   #+END_SRC
-
-Then connect to [[http://127.0.0.1:8080/]] the admin interface.
-
-* COMMENT Footer
-# Local Variables:
-# mode: org
-# End:
