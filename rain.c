@@ -1,4 +1,9 @@
-/* rain.c -- Rain measurement with Davis rain unit.
+/* Copyright 2016 Marcus Geiger. All rights reserved. Use of this
+ * source code is governed by a Apache 2.0 license that can be found
+ * in the LICENSE file.
+ *
+ *
+ * -- Rain measurement with Davis rain unit.
  *
  * Internally the sensor contains a seesaw with a cup on each side.
  * The sessaw goes down if the cup fills with water (equiv. 0.2mm)

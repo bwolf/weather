@@ -1,4 +1,9 @@
-// twim.c - TWI master according Atmel datasheet
+/* Copyright 2016 Marcus Geiger. All rights reserved. Use of this
+ * source code is governed by a Apache 2.0 license that can be found
+ * in the LICENSE file.
+ *
+ * -- TWI master according to Atmel datasheet.
+ */
 
 #include "config.h"
 

@@ -1,4 +1,8 @@
-/* bmp085.c - Bosch BMP085
+/* Copyright 2016 Marcus Geiger. All rights reserved. Use of this
+ * source code is governed by a Apache 2.0 license that can be found
+ * in the LICENSE file.
+ *
+ * bmp085.c - Bosch BMP085
  *
  * Example calibration coefficients from eeprom.
  *

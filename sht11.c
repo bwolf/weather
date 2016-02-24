@@ -1,4 +1,8 @@
-/* sht11.c - Sensirion SHT7x/SHT11 sensor reading.
+/* Copyright 2016 Marcus Geiger. All rights reserved. Use of this
+ * source code is governed by a Apache 2.0 license that can be found
+ * in the LICENSE file.
+ *
+ * --- Sensirion SHT7x/SHT11 sensor reading.
  *
  * The sensor is driven with its default 14-bit (temp) and 12-bit
  * (humidity) readout mode. All temperature values are in degrees

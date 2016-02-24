@@ -12,29 +12,6 @@
 #  Frederik Rouleau
 #  Markus Pfaff
 #
-# On command line:
-#
-# make all = Make software.
-#
-# make clean = Clean out built project files.
-#
-# make coff = Convert ELF to AVR COFF (for use with AVR Studio 3.x or VMLAB).
-#
-# make extcoff = Convert ELF to AVR Extended COFF (for use with AVR Studio
-#                4.07 or greater).
-#
-# make program = Download the hex file to the device, using avrdude.  Please
-#                customize the avrdude settings below first!
-#
-# make filename.s = Just compile filename.c into the assembler code only
-#
-# To rebuild project do "make clean" then "make all".
-#
-
-# mth 2004/09
-# Differences from WinAVR 20040720 sample:
-# - DEPFLAGS according to Eric Weddingtion's fix (avrfreaks/gcc-forum)
-# - F_OSC Define in CFLAGS and AFLAGS
 
 # MCU name
 MCU = atmega88pa
