@@ -27,9 +27,9 @@ geographic location.
 [[./grafana1.png]]
 
 * License
-Please refer to [[./LICENSE]] for the license which applies to the source
-code of this repository. The license applies to all files if not
-otherwise stated in the file header.
+Please refer to the file =LICENSE= for the license which applies to
+the source code of this repository. The license applies to all files
+if not otherwise stated in the file header.
 
 * Building
 Build either the base or the station by running:
