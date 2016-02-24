@@ -72,22 +72,22 @@ static void timer2_async_init(void)
 
 static void timer2_async_stabilize_mcu_before_powerdown(void)
 {
-        // IMPORTANT: If Timer2 is used asynchronously to do periodic
-        // wake ups from sleep mode, a sleep of at least one resonator
-        // cycle of Timer2 needs to be performed (~30us), to
-        // reactivate the interrupt logic. Otherwise the MCU will
-        // never be waked. These could be omitted if it has been
-        // ensured that the main loop plus the interrupt logic take
-        // longer than 30us. The following two lines ensure the
-        // minimum time.
+    // IMPORTANT: If Timer2 is used asynchronously to do periodic
+    // wake ups from sleep mode, a sleep of at least one resonator
+    // cycle of Timer2 needs to be performed (~30us), to
+    // reactivate the interrupt logic. Otherwise the MCU will
+    // never be waked. These could be omitted if it has been
+    // ensured that the main loop plus the interrupt logic take
+    // longer than 30us. The following two lines ensure the
+    // minimum time.
 #if defined(__AVR_ATmega88__)
-        OCR2 = 0;                       // Dummy access
-        while ((ASSR & (1<< OCR2UB)))   // Wait until register access has completed
-            ;
+    OCR2 = 0;                       // Dummy access
+    while ((ASSR & (1<< OCR2UB)))   // Wait until register access has completed
+        ;
 #elif defined(__AVR_ATmega88PA__)
-        OCR2A = 0;                      // Dummy access
-        while ((ASSR & (1 << OCR2BUB))) // Wait until register access has completed
-            ;
+    OCR2A = 0;                      // Dummy access
+    while ((ASSR & (1 << OCR2BUB))) // Wait until register access has completed
+        ;
 #else
 # error "Unsupported MCU."
 #endif
