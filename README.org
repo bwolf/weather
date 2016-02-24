@@ -1,12 +1,14 @@
 * Introduction
 This is the source code for a weather station where multiple stations
 send their data via wireless transmission to a dedicated base. The
-hardware design is based around the Atmel ATmega88PA, Bosch BMP085,
-Sensirion SHT75x and a Davis rain measurement unit. Data transmission
-is done with the nRF24L01+.
+hardware design is based around the Atmel ATmega88PA, Bosch BMP085
+(pressure sensor), Sensirion SHT75x (high quality temperature and
+humidity sensor) and a Davis rain measurement unit (0.2mm resolution).
+Data transmission is driven by Nordic nRF24L01+.
 
 Currently missing is the hardware schematic and PCB design which will
-be added later. It exists at the moment only on bread boards.
+be added later to this repo. Nevertheless the hardware exists, but
+just on bread boards which is less than optimal.
 
 One of the design goals of the hardware is running ultra low power. It
 would be nice if the battery of a station would last for at least six
